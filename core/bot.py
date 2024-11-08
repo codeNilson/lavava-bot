@@ -1,25 +1,11 @@
-import os
-import discord
 from discord.ext import commands
-from dotenv import load_dotenv
+import discord
 from utils.cogs import add_cogs
 
-load_dotenv()
 
+class LavavaBot(commands.Bot):
+    def __init__(self, command_prefix="!", intents=discord.Intents.default()):
+        super().__init__(command_prefix=command_prefix, intents=intents)
 
-TOKEN = os.environ.get("DISCORD_TOKEN")
-
-# intents.message_content = True
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-
-@bot.event
-async def on_ready():
-    await add_cogs(bot)
-    for command in bot.commands:
-        print(command.name)
-    print("Bot is ready!")
-
-
-bot.run(TOKEN)
+    async def setup_hook(self):
+        await add_cogs(self)
