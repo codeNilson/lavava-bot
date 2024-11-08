@@ -9,13 +9,14 @@ class Players(commands.Cog, name="PlayersCog"):
 
     @commands.command()
     async def player(self, ctx, player: Player):
-        embed = discord.Embed(title=player.username, color=discord.Color.red())
+
+        embed = discord.Embed(title=player.username, color=discord.Colour.random())
 
         file = discord.File(
             "C:/Users/Denilson/Documents/GitHub/valorant-amateur-league/gamedata/static/gamedata/assets/agents/icons/omen_display_icon.webp",
             filename="omen_display_icon.webp",
         )
-        embed.set_thumbnail(url="attachment://omen_display_icon.webp")
+        embed.set_image(url="attachment://omen_display_icon.webp")
 
         embed.add_field(
             name="Main Agent", value=player.main_agent["name"], inline=False
