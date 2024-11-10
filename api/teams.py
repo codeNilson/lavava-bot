@@ -2,15 +2,15 @@ import aiohttp
 import settings
 
 
-base_url = settings.PLAYERS_API_URL
+base_url = settings.TEAMS_API_URL
 login = settings.API_LOGIN
 password = settings.API_PASSWORD
 
 
-async def get_all_players():
+async def create_team(team_a:list, team_b:list):
 
     async with aiohttp.ClientSession() as session:
-        async with session.request("GET", base_url) as response:
+        async with session.request("POST", base_url) as response:
             return await response.json()
 
 

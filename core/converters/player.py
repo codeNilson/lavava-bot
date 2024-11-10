@@ -1,6 +1,6 @@
 from discord.ext import commands
 from api.players import get_player_by_user
-from .models import PlayerModel
+from core.models import PlayerModel
 
 
 class Player(commands.Converter):

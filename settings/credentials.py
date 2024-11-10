@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_LOGIN = os.environ.get("API_LOGIN")
-API_PASSWORD = os.environ.get("API_PASSWORD")
+BOT_LOGIN = os.environ.get("BOT_LOGIN")
+BOT_PASSWORD = os.environ.get("BOT_PASSWORD")
 
 SITE_URL = os.environ.get("SITE_URL")
-API_URL = SITE_URL + os.environ.get("API_URL")
+PLAYERS_API_URL = SITE_URL + os.environ.get("PLAYERS_API_URL")
+TEAMS_API_URL = SITE_URL + os.environ.get("TEAMS_API_URL")

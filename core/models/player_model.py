@@ -19,7 +19,7 @@ class PlayerModel:
     def get_discord_uid(self):
         for social_account in self.social_accounts:
             if social_account["provider"] == "discord":
-                return social_account["uid"]
+                return int(social_account["uid"])
         return None
 
     def __str__(self):
