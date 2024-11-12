@@ -1,17 +1,19 @@
 import aiohttp
+from core.models.player_model import PlayerModel
 import settings
 
 
 base_url = settings.PLAYERS_API_URL
-login = settings.API_LOGIN
-password = settings.API_PASSWORD
+login = settings.BOT_LOGIN
+password = settings.BOT_PASSWORD
 
 
-async def get_all_players():
+async def get_all_players() -> list[PlayerModel]:
 
     async with aiohttp.ClientSession() as session:
         async with session.request("GET", base_url) as response:
-            return await response.json()
+            player_data = await response.json()
+            return list(map(lambda data: PlayerModel(**data), player_data))
 
 
 async def get_player_by_user(uuid):
