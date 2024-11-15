@@ -16,7 +16,8 @@ class PlayerModel(BaseModel):
     def url(self):
         return f"{settings.SITE_URL}players/profile/{quote(self.username)}"
 
-    def get_discord_uid(self):
+    @property
+    def discord_uid(self):
         if not self.social_accounts:
             return None
 
