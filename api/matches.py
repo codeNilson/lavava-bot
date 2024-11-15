@@ -1,6 +1,6 @@
 import aiohttp
 import settings
-from core.models.matches import Match
+from core.models.match_model import MatchModel
 
 
 base_url = settings.MATCHES_API_URL
@@ -14,4 +14,6 @@ async def create_match():
     async with aiohttp.ClientSession() as session:
         async with session.request("POST", base_url) as response:
             match_data = await response.json()
-            return Match(**match_data)
+            if response.status != 201:
+                return {"error": match_data}
+            return MatchModel(**match_data)

@@ -2,6 +2,8 @@ import random
 from time import sleep
 from discord.ext import commands
 from api.players import get_all_players
+from api.teams import create_team
+from api.matches import create_match
 
 
 class Matches(commands.Cog, name="MatchesCog"):
@@ -15,9 +17,13 @@ class Matches(commands.Cog, name="MatchesCog"):
     async def draw_captains(
         self, ctx
     ):  # adicionar opção para retirar jogadores da lista
-        captain_a, captain_b = random.sample(self.players, 2)
+        captain_a = next(
+            player for player in self.players if player.username == "aro might"
+        )
+        captain_b = next(
+            player for player in self.players if player.username == "neskauzz"
+        )
 
-        # Removing captains from players list
         self.players.remove(captain_a)
         self.players.remove(captain_b)
 
@@ -32,12 +38,21 @@ class Matches(commands.Cog, name="MatchesCog"):
     @draw_captains.before_invoke
     async def load_players(self, ctx) -> None:  # could be more fast
         """Load all players from the api"""
-        self.players = await get_all_players()
+        self.players = [
+            player
+            for player in await get_all_players()
+            if player.username
+            in [
+                "aro might",
+                "neskauzz",
+                "denilson",
+            ]
+        ]
 
     async def choose_teams(self, ctx, captain_a, captain_b):
 
-        captain_a_team = [captain_a.username]
-        captain_b_team = [captain_b.username]
+        captain_a_team = [captain_a]
+        captain_b_team = [captain_b]
 
         await ctx.send("Hora de escolher seus times!")
         choose_captain_a = True
@@ -60,22 +75,16 @@ class Matches(commands.Cog, name="MatchesCog"):
             choose = await self.bot.wait_for("message", check=valide_player)
 
             # Adicionando o jogador ao time do capitão
-            if choose_captain_a:
-                captain_a_team.append(choose.content)
-            else:
-                captain_b_team.append(choose.content)
-
-            player_to_remove = next(
-                (
-                    player
-                    for player in self.players
-                    if player.username == choose.content
-                ),
-                None,
+            chossen_player = next(
+                player for player in self.players if player.username == choose.content
             )
+            if choose_captain_a:
+                captain_a_team.append(chossen_player)
+            else:
+                captain_b_team.append(chossen_player)
 
-            if player_to_remove:
-                self.players.remove(player_to_remove)
+            # Removendo o jogador da lista de jogadores disponíveis
+            self.players.remove(chossen_player)
 
             choose_captain_a = not choose_captain_a
             proximo_capitao = captain_a if choose_captain_a else captain_b
@@ -83,17 +92,16 @@ class Matches(commands.Cog, name="MatchesCog"):
                 await ctx.send(
                     f"Agora é a vez de <@{proximo_capitao.username}> escolher."
                 )
-
-        # assert len(self.players) == 0
-        # assert len(captain_a_team) == 5
-        # assert len(captain_b_team) == 5
-
         await ctx.send(
-            f"Times definidos!\nTime A: {', '.join(captain_a_team)}\nTime B: {', '.join(captain_b_team)}"
+            f"Times definidos!\nTime A: {', '.join([player.username for player in captain_a_team])}\nTime B: {', '.join([player.username for player in captain_b_team])}"
         )
 
-        await ctx.invoke(self.create_teams, captain_a_team, captain_b_team)
+        await ctx.invoke(self.create_teams, teams=[captain_a_team, captain_b_team])
 
-    async def create_teams(self, ctx, captain_a_team, captain_b_team):
-        # create teams in the database
-        pass
+    async def create_teams(self, ctx, teams: list):
+
+        match = await create_match()
+
+        team_a, team_b = teams
+        await create_team(team=team_a, match=match)
+        await create_team(team=team_b, match=match)

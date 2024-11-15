@@ -1,16 +1,14 @@
-from uuid import UUID
 from urllib.parse import quote
 from pydantic import BaseModel
 import settings
-from .tier import TierModel
 
 
 class PlayerModel(BaseModel):
 
-    uuid: UUID
+    uuid: str
     username: str
     main_agent: dict | None
-    tier: TierModel | None
+    tier: str | None
     ranking: int
     social_accounts: list[dict]
 
