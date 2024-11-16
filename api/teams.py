@@ -1,6 +1,6 @@
 import aiohttp
 import settings
-from core.models.match_model import MatchModel
+from core import models
 
 
 base_url = settings.TEAMS_API_URL
@@ -8,15 +8,15 @@ login = settings.BOT_LOGIN
 password = settings.BOT_PASSWORD
 
 
-async def create_team(team: list, match: MatchModel) -> dict:
+async def create_team(team: models.TeamModel) -> dict:
+
+    if not isinstance(team, models.TeamModel):
+        raise ValueError("team must be an instance of TeamModel")
 
     data = {
-        "players_uuid": [],
-        "match_uuid": match.uuid,
+        "players_uuid": team.players_uuids,
+        "match_uuid": team.match.uuid,
     }
-
-    for player in team:
-        data["players_uuid"].append(player.uuid)
 
     async with aiohttp.ClientSession() as session:
         async with session.request("POST", base_url, json=data) as response:

@@ -6,6 +6,7 @@ from discord.ui import View, Button
 from api.players import get_all_players
 from api.teams import create_team
 from api.matches import create_match
+from core import models
 
 
 class Matches(commands.Cog, name="MatchesCog"):
@@ -39,12 +40,13 @@ class Matches(commands.Cog, name="MatchesCog"):
     @draw_captains.before_invoke
     async def load_players(self, ctx) -> None:  # Pode ser mais rápido
         """Load all players from the api"""
-        self.players = [player for player in await get_all_players()]
+        self.players = list(await get_all_players())
 
     async def choose_teams(self, ctx, captain_a, captain_b):
 
-        captain_a_team = [captain_a]
-        captain_b_team = [captain_b]
+        team_a = models.TeamModel(players=[captain_a])
+        team_b = models.TeamModel(players=[captain_b])
+
         choose_captain_a = True
 
         await ctx.send("Hora de escolher seus times!")
@@ -71,18 +73,20 @@ class Matches(commands.Cog, name="MatchesCog"):
 
                     current_captain = captain_a if choose_captain_a else captain_b
                     next_captain = captain_b if choose_captain_a else captain_a
+
                     if interaction.user.id != current_captain.discord_uid:
                         await interaction.response.send_message(
                             f"É a vez de <@{current_captain.discord_uid}> escolher!",
                             ephemeral=True,
+                            delete_after=5,
                         )
                         return
 
                     # Adiciona o jogador ao time do jogador que o escolheu
                     if choose_captain_a:
-                        captain_a_team.append(player)
+                        team_a.add_player(player)
                     else:
-                        captain_b_team.append(player)
+                        team_b.add_player(player)
 
                     # Remove o jogador da lista
                     self.players.remove(player)
@@ -119,15 +123,15 @@ class Matches(commands.Cog, name="MatchesCog"):
         await asyncio.sleep(90)
 
         await ctx.send(
-            f"Time A: {', '.join([p.username for p in captain_a_team])}\n"
-            f"Time B: {', '.join([p.username for p in captain_b_team])}"
+            f"Time A: {team_a.players_usernames}\n"
+            f"Time B: {team_b.players_usernames}"
         )
 
-        await ctx.invoke(self.create_teams, teams=[captain_a_team, captain_b_team])
+        await ctx.invoke(self.create_teams, teams=[team_a, team_b])
 
-    async def create_teams(self, ctx, teams: list):
+    async def create_teams(self, ctx, teams: list[models.TeamModel]):
         """Cria as equipes na API."""
         match = await create_match()
-        team_a, team_b = teams
-        await create_team(team=team_a, match=match)
-        await create_team(team=team_b, match=match)
+        for team in teams:
+            team.match = match
+            await create_team(team=team)
