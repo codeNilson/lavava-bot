@@ -15,6 +15,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         super().__init__()
         self.bot = bot
         self.players = []
+        self.all_chosen_event = asyncio.Event()
 
     @commands.command(name="sortear")
     async def draw_captains(self, ctx):
@@ -92,6 +93,7 @@ class Matches(commands.Cog, name="MatchesCog"):
                     self.players.remove(player)
 
                     if not self.players:
+                        self.all_chosen_event.set()
                         await interaction.response.edit_message(
                             content="Todos os jogadores foram escolhidos!",
                             view=None,
@@ -120,7 +122,10 @@ class Matches(commands.Cog, name="MatchesCog"):
             view=await update_view(),
         )
 
-        await asyncio.sleep(90)
+        try:
+            await asyncio.wait_for(self.all_chosen_event.wait(), timeout=120)
+        except asyncio.TimeoutError:
+            await ctx.send("Tempo esgotado! Nem todos os jogadores foram escolhidos.")
 
         await ctx.send(
             f"Time A: {team_a.players_usernames}\n"
