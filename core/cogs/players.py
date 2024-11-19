@@ -10,8 +10,7 @@ class Players(commands.Cog, name="PlayersCog"):
     @commands.command()
     async def player(self, ctx, player: Player):
 
-        discord_uid = player.get_discord_uid()
-        discord_user = f"<@{discord_uid}>" if discord_uid else player.username
+        discord_user = f"<@{player.discord_uid}>"
 
         embed = discord.Embed(
             title=f"{player.username}",

@@ -1,6 +1,5 @@
 from discord.ext import commands
 from api.players import get_player_by_user
-from core.models import PlayerModel
 
 
 class Player(commands.Converter):
@@ -9,4 +8,4 @@ class Player(commands.Converter):
             player_data = await get_player_by_user(uuid)
         except Exception as e:
             raise commands.BadArgument(str(e))
-        return PlayerModel(**player_data)
+        return player_data

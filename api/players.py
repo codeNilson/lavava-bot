@@ -23,4 +23,4 @@ async def get_player_by_user(uuid):
             if response.status == 404:
                 return None
             data = await response.json()
-            return data
+            return PlayerModel(**data)
