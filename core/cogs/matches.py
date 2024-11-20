@@ -1,11 +1,8 @@
 import asyncio
-import random
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
-from api.players import get_all_players
-from api.teams import create_team
-from api.matches import create_match
+from api.api_client import api_client
 from core import models
 
 
@@ -41,7 +38,7 @@ class Matches(commands.Cog, name="MatchesCog"):
     @draw_captains.before_invoke
     async def load_players(self, ctx) -> None:  # Pode ser mais rápido
         """Load all players from the api"""
-        self.players = list(await get_all_players())
+        self.players = list(await api_client.get_all_players())
 
     async def choose_teams(self, ctx, captain_a, captain_b):
 
@@ -54,17 +51,12 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         async def update_view():
             view = View(timeout=120)
-            colors = [
-                discord.ButtonStyle.green,
-                discord.ButtonStyle.red,
-                discord.ButtonStyle.blurple,
-            ]
 
             for player in self.players:
 
                 button = Button(
                     label=player.username,
-                    style=random.choice(colors),
+                    style=discord.ButtonStyle.secondary,
                     custom_id=player.username,
                 )
 
@@ -136,7 +128,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
     async def create_teams(self, ctx, teams: list[models.TeamModel]):
         """Cria as equipes na API."""
-        match = await create_match()
+        match = await api_client.create_match()
         for team in teams:
             team.match = match
-            await create_team(team=team)
+            await api_client.create_team(team=team)

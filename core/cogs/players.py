@@ -8,7 +8,7 @@ class Players(commands.Cog, name="PlayersCog"):
         self.bot = bot
 
     @commands.command()
-    async def player(self, ctx, player: Player):
+    async def player(self, ctx, *, player: Player):
 
         discord_user = f"<@{player.discord_uid}>"
 
@@ -26,13 +26,13 @@ class Players(commands.Cog, name="PlayersCog"):
 
         embed.add_field(
             name="Usuário",
-            value=discord_user,
+            value=discord_user if player.discord_uid else "N/A",
         )
         embed.add_field(
             name="Agente Principal",
             value=player.main_agent["name"],
         )
         embed.add_field(name="Ranking", value=player.ranking)
-        embed.add_field(name="Tier", value=player.tier.tier)
+        embed.add_field(name="Tier", value=player.tier)
 
         await ctx.send(file=file, embed=embed)
