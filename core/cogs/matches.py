@@ -94,12 +94,14 @@ class Matches(commands.Cog, name="MatchesCog"):
                     else:
 
                         # Troca o capitão atual
-                        choose_captain_a = not choose_captain_a
+                        if len(self.players) != 3:
+                            choose_captain_a = not choose_captain_a
 
                         # Responde à interação
 
                         await interaction.response.edit_message(
-                            content=f"Jogador {player.username} foi escolhido! Agora é a vez de <@{next_captain.discord_uid}> escolher.",
+                            content=f"Jogador {player.username} foi escolhido! \
+                                Agora é a vez de <@{next_captain.discord_uid}> escolher.",
                             view=await update_view(),
                         )
 
