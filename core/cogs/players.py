@@ -30,7 +30,7 @@ class Players(commands.Cog, name="PlayersCog"):
         )
         embed.add_field(
             name="Agente Principal",
-            value=player.main_agent["name"],
+            value=player.main_agent,
         )
         embed.add_field(name="Ranking", value=player.ranking)
         embed.add_field(name="Tier", value=player.tier)

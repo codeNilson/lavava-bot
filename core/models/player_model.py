@@ -7,9 +7,10 @@ class PlayerModel(BaseModel):
 
     uuid: str
     username: str
-    main_agent: dict | None
+    main_agent: str | None
     tier: str | None
     ranking: int
+    include_in_draft: bool
     social_accounts: list[dict]
 
     @property
