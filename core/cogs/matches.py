@@ -1,9 +1,12 @@
 import asyncio
+import random
 import discord
+import logging
 from discord.ext import commands
 from discord.ui import View, Button
 from api.api_client import api_client
 from core import models
+import settings
 
 
 class Matches(commands.Cog, name="MatchesCog"):
@@ -16,12 +19,19 @@ class Matches(commands.Cog, name="MatchesCog"):
 
     @commands.command(name="sortear")
     async def draw_captains(self, ctx):
-        captain_a = next(
-            player for player in self.players if player.username == "aro might"
-        )
-        captain_b = next(
-            player for player in self.players if player.username == "taifuzinha"
-        )
+
+        wants_to_be_drafted = [
+            player for player in self.players if player.include_in_draft
+        ]
+        if len(wants_to_be_drafted) < 2:
+            await ctx.send("Não há jogadores suficientes para o sorteio.")
+            return
+
+        captain_a = random.choice(wants_to_be_drafted)
+        wants_to_be_drafted.remove(captain_a)
+
+        captain_b = random.choice(wants_to_be_drafted)
+        wants_to_be_drafted.remove(captain_b)
 
         self.players.remove(captain_a)
         self.players.remove(captain_b)
@@ -38,7 +48,18 @@ class Matches(commands.Cog, name="MatchesCog"):
     @draw_captains.before_invoke
     async def load_players(self, ctx) -> None:  # Pode ser mais rápido
         """Load all players from the api"""
-        self.players = list(await api_client.get_all_players())
+        try:
+            self.players = await api_client.get_all_players()
+        except settings.LoginError:
+            await ctx.send(
+                "No momento não é possível carregar os jogadores. Por favor, tente mais tarde"
+            )
+            raise commands.CommandError("Erro ao carregar jogadores.")
+        if len(self.players) < 10:
+            await ctx.send("Não há jogadores suficientes para o sorteio.")
+            raise commands.CommandError(
+                f"É necessário ter pelo menos 10 jogadores para concluir o sorteio. Total de jogadores: {len(self.players)}"
+            )
 
     async def choose_teams(self, ctx, captain_a, captain_b):
 
@@ -84,7 +105,7 @@ class Matches(commands.Cog, name="MatchesCog"):
                     # Remove o jogador da lista
                     self.players.remove(player)
 
-                    if not self.players:
+                    if len(team_a) == 5 and len(team_b) == 5:
                         self.all_chosen_event.set()
                         await interaction.response.edit_message(
                             content="Todos os jogadores foram escolhidos!",
@@ -93,15 +114,15 @@ class Matches(commands.Cog, name="MatchesCog"):
 
                     else:
 
-                        # Troca o capitão atual
-                        if len(self.players) != 3:
+                        if len(team_b) != 4:
                             choose_captain_a = not choose_captain_a
-
-                        # Responde à interação
+                            next_captain = captain_b if choose_captain_a else captain_a
+                            message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de <@{next_captain.discord_uid}> escolher."
+                        else:
+                            message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de <@{current_captain.discord_uid}> escolher."
 
                         await interaction.response.edit_message(
-                            content=f"Jogador {player.username} foi escolhido! \
-                                Agora é a vez de <@{next_captain.discord_uid}> escolher.",
+                            content=message_content,
                             view=await update_view(),
                         )
 
@@ -120,6 +141,7 @@ class Matches(commands.Cog, name="MatchesCog"):
             await asyncio.wait_for(self.all_chosen_event.wait(), timeout=120)
         except asyncio.TimeoutError:
             await ctx.send("Tempo esgotado! Nem todos os jogadores foram escolhidos.")
+            raise commands.CommandError("Tempo esgotado.")
 
         await ctx.send(
             f"Time A: {team_a.players_usernames}\n"
@@ -134,3 +156,4 @@ class Matches(commands.Cog, name="MatchesCog"):
         for team in teams:
             team.match = match
             await api_client.create_team(team=team)
+        logging.info("Equipes criadas com sucesso.")

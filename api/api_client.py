@@ -27,6 +27,7 @@ class ApiClient:
     @asynccontextmanager
     async def _session_context(self):
         access_token = await self.token_manager.get_access_token()
+
         headers = {
             "Authorization": f"Bearer {access_token}",
         }
@@ -38,10 +39,9 @@ class ApiClient:
         async with self._session_context() as session:
             async with session.get(API_ENDPOINTS.get("players")) as response:
                 if response.status != 200:
-                    print("Erro ao requisitar all_players", response.status)
                     return []
-                player_data = await response.json()
-                return list(map(lambda data: models.PlayerModel(**data), player_data))
+                players_data = await response.json()
+                return [models.PlayerModel(**player) for player in players_data]
 
     async def get_player_by_user(self, username: str) -> models.PlayerModel:
         player_detail_endpoint = f"{API_ENDPOINTS.get("players")}{username}"

@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import logging
 
 
 class AdminTasks(commands.Cog, name="AdminTasksCog"):
@@ -16,9 +17,11 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
                     if m != message:
                         await m.delete()
             except discord.HTTPException as e:
-                print(f"Erro ao excluir mensagens: {e}")
+                logging.warning(
+                    f"Erro ao deletar mensagem após chamada do webhook: {e}"
+                )
 
             try:
                 await message.pin()
             except discord.HTTPException as e:
-                print(f"Erro ao fixar mensagem: {e}")
+                logging.warning(f"Erro ao fixar mensagem após chamada do webhook: {e}")
