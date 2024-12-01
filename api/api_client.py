@@ -44,7 +44,7 @@ class ApiClient:
                 return [models.PlayerModel(**player) for player in players_data]
 
     async def get_player_by_user(self, username: str) -> models.PlayerModel:
-        player_detail_endpoint = f"{API_ENDPOINTS.get("players")}{username}"
+        player_detail_endpoint = f"{API_ENDPOINTS.get('players')}{username}"
         async with self._session_context() as session:
             async with session.get(player_detail_endpoint) as response:
                 if response.status == 404:
