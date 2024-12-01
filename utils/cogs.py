@@ -9,7 +9,7 @@ async def add_cogs(bot):
     COGS_PATH = Path(settings.COGS_PATH)
 
     for filepath in COGS_PATH.glob("*.py"):
-        module_name = f"{settings.COGS_PATH.replace("/",".")}.{filepath.stem}"
+        module_name = f"{settings.COGS_PATH.replace('/', '.')}.{filepath.stem}"
 
         try:
             module = importlib.import_module(module_name)
