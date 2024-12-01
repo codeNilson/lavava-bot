@@ -1,4 +1,3 @@
-import logging
 from discord.ext import commands
 from api.api_client import api_client
 import settings
@@ -12,7 +11,7 @@ class Player(commands.Converter):
         try:
             player = await api_client.get_player_by_user(username)
         except settings.LoginError as e:
-            logging.error(
+            settings.LOGGER.error(
                 "Erro ao tentar carregar o jogador '%s': %s", username, str(e)
             )
             await ctx.send(
@@ -20,7 +19,7 @@ class Player(commands.Converter):
             )
             raise commands.CommandError("Falha na conexão com o servidor.")
         except Exception as e:
-            logging.exception(
+            settings.LOGGER.exception(
                 "Erro inesperado ao buscar o jogador '%s': %s", username, str(e)
             )
             await ctx.send(
@@ -29,7 +28,7 @@ class Player(commands.Converter):
             raise commands.CommandError("Erro inesperado ao processar a solicitação.")
 
         if not player:
-            logging.info("Jogador '%s' não encontrado.", username)
+            settings.LOGGER.info("Jogador '%s' não encontrado.", username)
             await ctx.send(
                 f"Jogador '{username}' não encontrado. Por favor, verifique o usuário e tente novamente."
             )

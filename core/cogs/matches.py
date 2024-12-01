@@ -1,7 +1,6 @@
 import asyncio
 import random
 import discord
-import logging
 from discord.ext import commands
 from discord.ui import View, Button
 from api.api_client import api_client
@@ -17,6 +16,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         self.players = []
         self.all_chosen_event = asyncio.Event()
 
+    @commands.has_role(1309641234868080710)
     @commands.command(name="sortear")
     async def draw_captains(self, ctx):
 
@@ -156,4 +156,4 @@ class Matches(commands.Cog, name="MatchesCog"):
         for team in teams:
             team.match = match
             await api_client.create_team(team=team)
-        logging.info("Equipes criadas com sucesso.")
+        settings.LOGGER.info("Equipes criadas com sucesso.")

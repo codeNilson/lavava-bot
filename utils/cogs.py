@@ -25,5 +25,6 @@ async def add_cogs(bot):
                 print(f"Loaded module {module_name}")
 
         except Exception as e:
+            settings.LOGGER.warning("Failed to load module %s: %s", module_name, e)
             print(f"Failed to load module {module_name}: {e}")
             continue
