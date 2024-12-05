@@ -9,7 +9,7 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
-        if message.is_system() and message.channel.id != 1243897099398021182:
+        if message.is_system() or message.channel.id != 1243897099398021182:
             return
 
         channel = message.channel
