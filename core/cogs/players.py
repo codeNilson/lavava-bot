@@ -18,11 +18,9 @@ class Players(commands.Cog, name="PlayersCog"):
             url=player.url,
         )
 
-        file = discord.File(
-            "C:/Users/Denilson/Documents/GitHub/valorant-amateur-league/gamedata/static/gamedata/assets/agents/icons/omen_display_icon.webp",
-            filename="omen_display_icon.webp",
+        embed.set_thumbnail(
+            url=f"https://www.lavava.com.br/static/{player.main_agent['icon']}"
         )
-        embed.set_image(url="attachment://omen_display_icon.webp")
 
         embed.add_field(
             name="Usuário",
@@ -30,9 +28,9 @@ class Players(commands.Cog, name="PlayersCog"):
         )
         embed.add_field(
             name="Agente Principal",
-            value=player.main_agent,
+            value=player.main_agent["name"],
         )
         embed.add_field(name="Ranking", value=player.ranking)
-        embed.add_field(name="Tier", value=player.tier)
+        # embed.add_field(name="Tier", value=player.tier)
 
-        await ctx.send(file=file, embed=embed)
+        await ctx.send(embed=embed)

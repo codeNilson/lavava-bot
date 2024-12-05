@@ -7,7 +7,7 @@ class PlayerModel(BaseModel):
 
     uuid: str
     username: str
-    main_agent: str | None
+    main_agent: dict | None
     tier: str | None
     ranking: int
     include_in_draft: bool
