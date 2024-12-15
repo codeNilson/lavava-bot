@@ -24,14 +24,15 @@ class Matches(commands.Cog, name="MatchesCog"):
             player for player in self.players if player.include_in_draft
         ]
         if len(wants_to_be_drafted) < 2:
-            await ctx.send("Não há jogadores suficientes para o sorteio.")
+            await ctx.send(
+                f"Só é possível sortear com no mínimo 2 jogadores. Atualmente há {len(wants_to_be_drafted)} jogadores disponíveis."
+            )
             return
 
         captain_a = random.choice(wants_to_be_drafted)
         wants_to_be_drafted.remove(captain_a)
 
         captain_b = random.choice(wants_to_be_drafted)
-        wants_to_be_drafted.remove(captain_b)
 
         self.players.remove(captain_a)
         self.players.remove(captain_b)
@@ -90,7 +91,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
                     if interaction.user.id != current_captain.discord_uid:
                         await interaction.response.send_message(
-                            f"É a vez de <@{current_captain.discord_uid}> escolher!",
+                            f"Achou que eu não ia pensar nisso, né? Só <@{current_captain.discord_uid}> pode escolher agora.",
                             ephemeral=True,
                             delete_after=5,
                         )
@@ -105,7 +106,7 @@ class Matches(commands.Cog, name="MatchesCog"):
                     # Remove o jogador da lista
                     self.players.remove(player)
 
-                    if len(team_a) == 5 and len(team_b) == 5:
+                    if len(team_a.players) == 5 and len(team_b.players) == 5:
                         self.all_chosen_event.set()
                         await interaction.response.edit_message(
                             content="Todos os jogadores foram escolhidos!",
@@ -114,9 +115,9 @@ class Matches(commands.Cog, name="MatchesCog"):
 
                     else:
 
-                        if len(team_b) != 4:
-                            choose_captain_a = not choose_captain_a
+                        if len(team_b.players) != 4:
                             next_captain = captain_b if choose_captain_a else captain_a
+                            choose_captain_a = not choose_captain_a
                             message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de <@{next_captain.discord_uid}> escolher."
                         else:
                             message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de <@{current_captain.discord_uid}> escolher."
