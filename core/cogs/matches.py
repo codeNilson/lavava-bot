@@ -141,12 +141,14 @@ class Matches(commands.Cog, name="MatchesCog"):
         try:
             await asyncio.wait_for(self.all_chosen_event.wait(), timeout=120)
         except asyncio.TimeoutError:
-            await ctx.send("Tempo esgotado! Nem todos os jogadores foram escolhidos.")
+            await ctx.send(
+                "⏳ Tempo esgotado! Nem todos os jogadores foram escolhidos."
+            )
             return
 
         await ctx.send(
-            f"Time A: {team_a.players_usernames}\n"
-            f"Time B: {team_b.players_usernames}"
+            f"🔵 Time A: {team_a.players_usernames}\n"
+            f"🔴 Time B: {team_b.players_usernames}"
         )
 
         await ctx.invoke(self.create_teams, teams=[team_a, team_b])
