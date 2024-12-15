@@ -72,7 +72,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         await ctx.send("Hora de escolher seus times!")
 
         async def update_view():
-            view = View(timeout=120)
+            view = View(timeout=180)
 
             for player in self.players:
 
@@ -85,10 +85,7 @@ class Matches(commands.Cog, name="MatchesCog"):
                 async def button_callback(interaction, player=player):
                     """Callback para cada botão."""
                     nonlocal choose_captain_a
-
-                    current_captain = captain_a if choose_captain_a else captain_b
-                    next_captain = captain_b if choose_captain_a else captain_a
-
+                    
                     if interaction.user.id != current_captain.discord_uid:
                         await interaction.response.send_message(
                             f"Achou que eu não ia pensar nisso, né? Só <@{current_captain.discord_uid}> pode escolher agora.",
@@ -96,6 +93,10 @@ class Matches(commands.Cog, name="MatchesCog"):
                             delete_after=5,
                         )
                         return
+
+                    current_captain = captain_a if choose_captain_a else captain_b
+                    next_captain = captain_b if choose_captain_a else captain_a
+
 
                     # Adiciona o jogador ao time do jogador que o escolheu
                     if choose_captain_a:
@@ -139,7 +140,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         )
 
         try:
-            await asyncio.wait_for(self.all_chosen_event.wait(), timeout=120)
+            await asyncio.wait_for(self.all_chosen_event.wait(), timeout=180)
         except asyncio.TimeoutError:
             await ctx.send(
                 "⏳ Tempo esgotado! Nem todos os jogadores foram escolhidos."
