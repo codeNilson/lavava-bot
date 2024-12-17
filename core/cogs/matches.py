@@ -3,9 +3,10 @@ import random
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
+import settings
 from api.api_client import api_client
 from core import models
-import settings
+from utils.show_teams import show_teams
 
 
 class Matches(commands.Cog, name="MatchesCog"):
@@ -31,8 +32,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         captain_a = random.choice(wants_to_be_drafted)
         wants_to_be_drafted.remove(captain_a)
-
-        captain_b = random.choice(wants_to_be_drafted)
+        captain_b = wants_to_be_drafted[0]
 
         self.players.remove(captain_a)
         self.players.remove(captain_b)
@@ -64,6 +64,8 @@ class Matches(commands.Cog, name="MatchesCog"):
 
     async def choose_teams(self, ctx, captain_a, captain_b):
 
+        self.all_chosen_event = asyncio.Event()
+
         team_a = models.TeamModel(players=[captain_a])
         team_b = models.TeamModel(players=[captain_b])
 
@@ -85,7 +87,10 @@ class Matches(commands.Cog, name="MatchesCog"):
                 async def button_callback(interaction, player=player):
                     """Callback para cada botão."""
                     nonlocal choose_captain_a
-                    
+
+                    current_captain = captain_a if choose_captain_a else captain_b
+                    next_captain = captain_b if choose_captain_a else captain_a
+
                     if interaction.user.id != current_captain.discord_uid:
                         await interaction.response.send_message(
                             f"Achou que eu não ia pensar nisso, né? Só <@{current_captain.discord_uid}> pode escolher agora.",
@@ -93,10 +98,6 @@ class Matches(commands.Cog, name="MatchesCog"):
                             delete_after=5,
                         )
                         return
-
-                    current_captain = captain_a if choose_captain_a else captain_b
-                    next_captain = captain_b if choose_captain_a else captain_a
-
 
                     # Adiciona o jogador ao time do jogador que o escolheu
                     if choose_captain_a:
@@ -147,10 +148,7 @@ class Matches(commands.Cog, name="MatchesCog"):
             )
             return
 
-        await ctx.send(
-            f"🔵 Time A: {team_a.players_usernames}\n"
-            f"🔴 Time B: {team_b.players_usernames}"
-        )
+        await show_teams(ctx, team_a, team_b)
 
         await ctx.invoke(self.create_teams, teams=[team_a, team_b])
 

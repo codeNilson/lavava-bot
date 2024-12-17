@@ -1,12 +1,13 @@
+from datetime import time as dt_time
 import discord
-from discord.ext import commands
-from discord.ext import tasks
+from discord.ext import commands, tasks
 import settings
 
 
 class AdminTasks(commands.Cog, name="AdminTasksCog"):
     def __init__(self, bot):
         self.bot = bot
+        self.task_clear_message.start()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -66,6 +67,29 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
                 f"⚠️ Não foi possível limpar o canal {channel_name} devido a um erro."
             )
 
-    @tasks.loop(seconds=1)
-    async def task_clear_message(self):
-        pass
+    async def cog_unload(self):
+        self.task_clear_message.cancel()
+        return super().cog_unload()
+
+    time_to_run = dt_time(hour=3, minute=0)
+
+    @tasks.loop(time=time_to_run)
+    async def task_clear_message(self, *, channel_id: int = 1243610772735529054):
+        channel_geral = self.bot.get_channel(channel_id)
+        try:
+            await channel_geral.purge(limit=None)
+        except discord.Forbidden:
+            settings.LOGGER.warning(
+                "Permissão negada ao limpar canal %s", channel_geral
+            )
+        except discord.HTTPException as e:
+            settings.LOGGER.warning("Erro ao limpar canal %s: %s", channel_geral, e)
+        else:
+            settings.LOGGER.info("Canal %s limpo com sucesso.", channel_geral)
+            channel_audit = self.bot.get_channel(1318700402581176330)
+            channel_audit.send(f"✅ Canal {channel_geral} limpo automaticamente.")
+
+    @task_clear_message.before_loop
+    async def before_task_clear_message(self):
+        await self.bot.wait_until_ready()
+        settings.LOGGER.info("Tarefa de limpeza de mensagens iniciada.")
