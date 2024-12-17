@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext import tasks
 import settings
 
 
@@ -64,3 +65,7 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
             await ctx.send(
                 f"⚠️ Não foi possível limpar o canal {channel_name} devido a um erro."
             )
+
+    @tasks.loop(seconds=1)
+    async def task_clear_message(self):
+        pass
