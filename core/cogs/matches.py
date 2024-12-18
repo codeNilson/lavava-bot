@@ -6,7 +6,8 @@ from discord.ui import View, Button
 import settings
 from api.api_client import api_client
 from core import models
-from utils.show_teams import show_teams
+from utils.embeds import show_teams
+from utils.roles import clear_roles
 
 
 class Matches(commands.Cog, name="MatchesCog"):
@@ -15,7 +16,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         super().__init__()
         self.bot = bot
         self.players = []
-        self.all_chosen_event = asyncio.Event()
+        self.all_chosen_event = None
 
     @commands.has_role(1309641234868080710)
     @commands.command(name="sortear")
@@ -69,9 +70,17 @@ class Matches(commands.Cog, name="MatchesCog"):
         team_a = models.TeamModel(players=[captain_a])
         team_b = models.TeamModel(players=[captain_b])
 
+        blue_role = ctx.guild.get_role(1319050096473542696)
+        red_role = ctx.guild.get_role(1319050273603321916)
+
+        blue_channel = ctx.guild.get_channel(1309646649571676190)
+        red_channel = ctx.guild.get_channel(1309645376608796813)
+
         choose_captain_a = True
 
         await ctx.send("Hora de escolher seus times!")
+
+        await clear_roles(roles=[blue_role, red_role])
 
         async def update_view():
             view = View(timeout=180)
@@ -93,17 +102,33 @@ class Matches(commands.Cog, name="MatchesCog"):
 
                     if interaction.user.id != current_captain.discord_uid:
                         await interaction.response.send_message(
-                            f"Achou que eu não ia pensar nisso, né? Só <@{current_captain.discord_uid}> pode escolher agora.",
+                            "Não é sua vez de escolher!",
                             ephemeral=True,
                             delete_after=5,
                         )
                         return
 
+                    team = team_a if choose_captain_a else team_b
+                    role = blue_role if choose_captain_a else red_role
+
+                    guild = interaction.guild or ctx.guild
+                    member = guild.get_member(player.discord_uid)
+
                     # Adiciona o jogador ao time do jogador que o escolheu
-                    if choose_captain_a:
-                        team_a.add_player(player)
-                    else:
-                        team_b.add_player(player)
+                    team.add_player(player)
+                    if member:
+                        await member.add_roles(role)
+                        try:
+                            await member.move_to(
+                                blue_channel if choose_captain_a else red_channel
+                            )
+                        except discord.HTTPException as e:
+                            settings.LOGGER.warning(
+                                "Não foi possível mover o jogador %s para o canal %s: %s",
+                                member.display_name,
+                                blue_channel if choose_captain_a else red_channel,
+                                e.text,
+                            )
 
                     # Remove o jogador da lista
                     self.players.remove(player)
@@ -150,9 +175,9 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         await show_teams(ctx, team_a, team_b)
 
-        await ctx.invoke(self.create_teams, teams=[team_a, team_b])
+        await self.create_teams(teams=[team_a, team_b])
 
-    async def create_teams(self, ctx, teams: list[models.TeamModel]):
+    async def create_teams(self, teams: list[models.TeamModel]):
         """Cria as equipes na API."""
         match = await api_client.create_match()
         for team in teams:

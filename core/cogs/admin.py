@@ -2,6 +2,7 @@ from datetime import time as dt_time
 import discord
 from discord.ext import commands, tasks
 import settings
+from utils.roles import clear_roles
 
 
 class AdminTasks(commands.Cog, name="AdminTasksCog"):
@@ -71,7 +72,7 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
         self.task_clear_message.cancel()
         return super().cog_unload()
 
-    time_to_run = dt_time(hour=3, minute=0)
+    time_to_run = dt_time(hour=23, minute=35, second=0)
 
     @tasks.loop(time=time_to_run)
     async def task_clear_message(self, *, channel_id: int = 1243610772735529054):
@@ -87,9 +88,12 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
         else:
             settings.LOGGER.info("Canal %s limpo com sucesso.", channel_geral)
             channel_audit = self.bot.get_channel(1318700402581176330)
-            channel_audit.send(f"✅ Canal {channel_geral} limpo automaticamente.")
+            await channel_audit.send(f"✅ Canal {channel_geral} limpo automaticamente.")
 
-    @task_clear_message.before_loop
-    async def before_task_clear_message(self):
-        await self.bot.wait_until_ready()
-        settings.LOGGER.info("Tarefa de limpeza de mensagens iniciada.")
+    @tasks.loop(time=time_to_run)
+    async def task_clear_teams_roles(self):
+        blue_role = self.bot.guild.get_role(1319050096473542696)
+        red_role = self.bot.guild.get_role(1319050273603321916)
+
+        await clear_roles(roles=[blue_role, red_role])
+        settings.LOGGER.info("Papéis de times limpos com sucesso.")
