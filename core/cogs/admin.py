@@ -2,7 +2,6 @@ from datetime import time as dt_time
 import discord
 from discord.ext import commands, tasks
 import settings
-from utils.roles import clear_roles
 
 
 class AdminTasks(commands.Cog, name="AdminTasksCog"):
@@ -42,6 +41,8 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
                     "⚠️ Não foi possível deletar uma mensagem devido a um erro."
                 )
 
+        await self.bot.process_commands(message)
+
     @commands.command(name="clear", aliases=["limpar"])
     @commands.has_role(1309641234868080710)
     async def clear_messages(self, ctx, *, channel_name: str) -> None:
@@ -67,6 +68,26 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
             await ctx.send(
                 f"⚠️ Não foi possível limpar o canal {channel_name} devido a um erro."
             )
+
+    @commands.command(name="clear_roles", aliases=["limpar_cargos"])
+    @commands.has_role(1309641234868080710)
+    async def clear_roles(self, ctx, *, roles: commands.Greedy[discord.Role]) -> None:
+        """Clear roles from members"""
+        for role in roles:
+            for member in role.members:
+                try:
+                    await member.remove_roles(role)
+                except discord.Forbidden:
+                    settings.LOGGER.warning(
+                        "Permissão negada ao remover cargo %s de %s", role, member
+                    )
+                except discord.HTTPException as e:
+                    settings.LOGGER.warning(
+                        "Erro ao remover cargo %s de %s: %s", role, member, e
+                    )
+                    await ctx.send(
+                        f"⚠️ Não foi possível remover o cargo {role} de {member} devido a um erro."
+                    )
 
     async def cog_unload(self):
         self.task_clear_message.cancel()

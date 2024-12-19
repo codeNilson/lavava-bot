@@ -13,3 +13,7 @@ class Fun(commands.Cog, name="FunCog"):
             await message.reply("pong")
         if message.content.lower() in ("natan", "nathan"):
             await message.add_reaction("🐂")
+        if message.content.lower() == "eric":
+            await message.add_reaction("🃏")
+
+        await self.bot.process_commands(message)

@@ -1,0 +1,11 @@
+from enum import Enum
+
+
+class RoleID(Enum):
+    BLUE = 1319050096473542696
+    RED = 1319050273603321916
+
+
+class ChannelID(Enum):
+    BLUE = 1309646649571676190
+    RED = 1309645376608796813
