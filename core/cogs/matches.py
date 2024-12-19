@@ -7,7 +7,8 @@ import settings
 from api.api_client import api_client
 from core import models
 from utils.embeds import show_teams
-from utils.roles import clear_roles
+from utils.roles import clear_roles, add_roles
+from utils.admin import move_user_to_channel
 
 
 class Matches(commands.Cog, name="MatchesCog"):
@@ -82,6 +83,8 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         await clear_roles(roles=[blue_role, red_role])
 
+        await ctx.send(f"<@{captain_a.discord_uid}> você começa!")
+
         async def update_view():
             view = View(timeout=180)
 
@@ -109,27 +112,13 @@ class Matches(commands.Cog, name="MatchesCog"):
                         return
 
                     team = team_a if choose_captain_a else team_b
-                    role = blue_role if choose_captain_a else red_role
-
-                    guild = interaction.guild or ctx.guild
-                    member = guild.get_member(player.discord_uid)
-
-                    # Adiciona o jogador ao time do jogador que o escolheu
                     team.add_player(player)
-                    if member:
-                        await member.add_roles(role)
-                        try:
-                            await member.move_to(
-                                blue_channel if choose_captain_a else red_channel
-                            )
-                        except discord.HTTPException as e:
-                            settings.LOGGER.warning(
-                                "Não foi possível mover o jogador %s para o canal %s: %s",
-                                member.display_name,
-                                blue_channel if choose_captain_a else red_channel,
-                                e.text,
-                            )
 
+                    member = await player.to_member(interaction)
+                    if member:
+                        channel = blue_channel if choose_captain_a else red_channel
+                        move_user_to_channel(member, channel)
+                        
                     # Remove o jogador da lista
                     self.players.remove(player)
 
@@ -158,8 +147,6 @@ class Matches(commands.Cog, name="MatchesCog"):
                 view.add_item(button)
             return view
 
-        await ctx.send(f"<@{captain_a.discord_uid}> você começa!")
-
         await ctx.send(
             "Escolha um jogador disponível:",
             view=await update_view(),
@@ -173,11 +160,14 @@ class Matches(commands.Cog, name="MatchesCog"):
             )
             return
 
+        await add_roles(ctx, blue_role, team_a.players)
+        await add_roles(ctx, red_role, team_b.players)
+
         await show_teams(ctx, team_a, team_b)
 
-        await self.create_teams(teams=[team_a, team_b])
+        await self.create_match(teams=[team_a, team_b])
 
-    async def create_teams(self, teams: list[models.TeamModel]):
+    async def create_match(self, teams: list[models.TeamModel]):
         """Cria as equipes na API."""
         match = await api_client.create_match()
         for team in teams:

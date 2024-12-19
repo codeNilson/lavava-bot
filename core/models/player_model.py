@@ -1,5 +1,6 @@
 from urllib.parse import quote
 from pydantic import BaseModel
+import discord
 import settings
 
 
@@ -25,6 +26,12 @@ class PlayerModel(BaseModel):
         for social_account in self.social_accounts:
             if social_account["provider"] == "discord":
                 return int(social_account["uid"])
+        return None
+
+    async def to_member(self, ctx) -> discord.Member:
+        member_uid = self.discord_uid
+        if member_uid:
+            return await ctx.guild.get_member(member_uid)
         return None
 
     def __str__(self):
