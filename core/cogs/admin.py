@@ -72,7 +72,7 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
         self.task_clear_message.cancel()
         return super().cog_unload()
 
-    time_to_run = dt_time(hour=23, minute=35, second=0)
+    time_to_run = dt_time(hour=3, minute=0)
 
     @tasks.loop(time=time_to_run)
     async def task_clear_message(self, *, channel_id: int = 1243610772735529054):
@@ -92,8 +92,9 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
 
     @tasks.loop(time=time_to_run)
     async def task_clear_teams_roles(self):
-        blue_role = self.bot.guild.get_role(1319050096473542696)
-        red_role = self.bot.guild.get_role(1319050273603321916)
+        guild = self.bot.get_guild(1243610772064698398)
+        blue_role = guild.get_role(1319050096473542696)
+        red_role = guild.get_role(1319050273603321916)
 
         await clear_roles(roles=[blue_role, red_role])
         settings.LOGGER.info("Papéis de times limpos com sucesso.")
