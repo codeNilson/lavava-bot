@@ -15,5 +15,3 @@ class Fun(commands.Cog, name="FunCog"):
             await message.add_reaction("🐂")
         if message.content.lower() == "eric":
             await message.add_reaction("🃏")
-
-        await self.bot.process_commands(message)

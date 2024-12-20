@@ -3,12 +3,6 @@ from discord import Role
 from core.models.player_model import PlayerModel
 
 
-async def clear_roles(roles: list[Role]):
-    for role in roles:
-        for member in role.members:
-            await member.remove_roles(role)
-
-
 async def add_roles(ctx, role: Role, users: list[PlayerModel | discord.Member]):
     for user in users:
         if isinstance(user, PlayerModel):

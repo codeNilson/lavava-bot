@@ -31,7 +31,8 @@ class PlayerModel(BaseModel):
     async def to_member(self, ctx) -> discord.Member:
         member_uid = self.discord_uid
         if member_uid:
-            return await ctx.guild.get_member(member_uid)
+            member = ctx.guild.get_member(member_uid)
+            return member
         return None
 
     def __str__(self):

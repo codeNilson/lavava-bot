@@ -1,13 +1,18 @@
 from datetime import time as dt_time
 import discord
 from discord.ext import commands, tasks
+from utils.enums import RoleID, ChannelID
 import settings
 
 
 class AdminTasks(commands.Cog, name="AdminTasksCog"):
+
+    time_to_run = dt_time(hour=3)
+
     def __init__(self, bot):
         self.bot = bot
         self.task_clear_message.start()
+        self.task_clear_teams_roles.start()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -41,17 +46,16 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
                     "⚠️ Não foi possível deletar uma mensagem devido a um erro."
                 )
 
-        await self.bot.process_commands(message)
-
     @commands.command(name="clear", aliases=["limpar"])
-    @commands.has_role(1309641234868080710)
+    @commands.has_role(RoleID.STAFF.value)
     async def clear_messages(self, ctx, *, channel_name: str) -> None:
         """Clear messages from the channel"""
         channel = discord.utils.get(ctx.guild.channels, name=channel_name)
 
         if not channel or not isinstance(channel, discord.TextChannel):
             await ctx.send(
-                f"⚠️ Canal {channel_name} não encontrado. Verifique o nome do canal e tente novamente."
+                f"⚠️ Canal {channel_name} não encontrado. \
+                Verifique o nome do canal e tente novamente."
             )
             return
 
@@ -61,7 +65,8 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
         except discord.Forbidden:
             settings.LOGGER.warning("Permissão negada ao limpar canal %s", channel_name)
             await ctx.send(
-                f"⚠️ Não foi possível limpar o canal {channel_name} devido a permissões insuficientes."
+                f"⚠️ Não foi possível limpar o canal {channel_name} devido \
+                a permissões insuficientes."
             )
         except discord.HTTPException as e:
             settings.LOGGER.warning("Erro ao limpar canal %s: %s", channel_name, e)
@@ -70,9 +75,21 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
             )
 
     @commands.command(name="clear_roles", aliases=["limpar_cargos"])
-    @commands.has_role(1309641234868080710)
-    async def clear_roles(self, ctx, *, roles: commands.Greedy[discord.Role]) -> None:
+    @commands.has_role(RoleID.STAFF.value)
+    async def clear_roles(self, ctx, roles: commands.Greedy[discord.Role]) -> None:
         """Clear roles from members"""
+
+        if not roles:
+            await ctx.send(
+                "⚠️ Nenhum cargo fornecido. Por favor, forneça um ou mais cargos."
+            )
+            return
+
+        await self.remove_roles(roles)
+        await ctx.send("Cargos removidos com sucesso.")
+
+    async def remove_roles(self, roles: commands.Greedy[discord.Role]) -> None:
+
         for role in roles:
             for member in role.members:
                 try:
@@ -85,37 +102,33 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
                     settings.LOGGER.warning(
                         "Erro ao remover cargo %s de %s: %s", role, member, e
                     )
-                    await ctx.send(
-                        f"⚠️ Não foi possível remover o cargo {role} de {member} devido a um erro."
-                    )
-
-    async def cog_unload(self):
-        self.task_clear_message.cancel()
-        return super().cog_unload()
-
-    time_to_run = dt_time(hour=3, minute=0)
 
     @tasks.loop(time=time_to_run)
-    async def task_clear_message(self, *, channel_id: int = 1243610772735529054):
-        channel_geral = self.bot.get_channel(channel_id)
-        try:
-            await channel_geral.purge(limit=None)
-        except discord.Forbidden:
-            settings.LOGGER.warning(
-                "Permissão negada ao limpar canal %s", channel_geral
-            )
-        except discord.HTTPException as e:
-            settings.LOGGER.warning("Erro ao limpar canal %s: %s", channel_geral, e)
-        else:
-            settings.LOGGER.info("Canal %s limpo com sucesso.", channel_geral)
-            channel_audit = self.bot.get_channel(1318700402581176330)
-            await channel_audit.send(f"✅ Canal {channel_geral} limpo automaticamente.")
+    async def task_clear_message(self, *, channel: discord.TextChannel = None):
+        channel = channel or self.bot.get_channel(ChannelID.GERAL.value)
+
+        await channel.purge(limit=None)
+
+        settings.LOGGER.info("Canal %s limpo com sucesso.", channel)
+        channel_audit = self.bot.get_channel(ChannelID.AUDIT.value)
+        await channel_audit.send(f"✅ Canal {channel} limpo automaticamente.")
 
     @tasks.loop(time=time_to_run)
     async def task_clear_teams_roles(self):
-        guild = self.bot.get_guild(1243610772064698398)
-        blue_role = guild.get_role(1319050096473542696)
-        red_role = guild.get_role(1319050273603321916)
+        guild = self.bot.get_guild(1243610772064698398)  # WIP
+        blue_role = guild.get_role(RoleID.BLUE.value)
+        red_role = guild.get_role(RoleID.RED.value)
 
-        await clear_roles(roles=[blue_role, red_role])
-        settings.LOGGER.info("Papéis de times limpos com sucesso.")
+        try:
+            await self.remove_roles(roles=[blue_role, red_role])
+        except Exception as e:
+            settings.LOGGER.warning("Erro ao limpar cargos de times: %s", e)
+        else:
+            settings.LOGGER.info("Papéis de times limpos com sucesso.")
+            channel_audit = self.bot.get_channel(ChannelID.AUDIT.value)
+            await channel_audit.send("✅ Roles limpas automaticamente.")
+
+    async def cog_unload(self):
+        self.task_clear_message.cancel()
+        self.task_clear_teams_roles.cancel()
+        return super().cog_unload()

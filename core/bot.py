@@ -18,7 +18,17 @@ class LavavaBot(commands.Bot):
             settings.LOGGER.info(
                 "User %s tried to use a command without required arguments", ctx.author
             )
-            await ctx.send("Você não forneceu todos os argumentos necessários.")
+            await ctx.send(
+                "Você não forneceu todos os argumentos necessários. Use !help para mais informações."
+            )
+        elif isinstance(error, commands.CommandNotFound):
+            settings.LOGGER.info(
+                "User %s tried to use a command that doesn't exist", ctx.author
+            )
+            await ctx.send("Esse comando não existe.")
+        elif isinstance(error, Exception):
+            settings.LOGGER.error("An error occurred: %s", error)
+            await ctx.send("Ocorreu um erro ao executar esse comando.")
 
     async def on_member_join(self, member):
         CARGO_PLAYER = 1309639892791332905  # pylint: disable=invalid-name

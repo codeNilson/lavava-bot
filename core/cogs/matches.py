@@ -7,7 +7,6 @@ import settings
 from api.api_client import api_client
 from core import models
 from utils.embeds import show_teams
-from utils.roles import clear_roles
 from utils.admin import move_user_to_channel
 from utils.enums import RoleID, ChannelID
 
@@ -41,7 +40,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         # Randomly select two players to be the captains
         captain_blue = random.choice(wants_to_be_drafted)
-        wants_to_be_drafted.remove(captain_blue) # Remove the captain from the list
+        wants_to_be_drafted.remove(captain_blue)  # Remove the captain from the list
         captain_red = wants_to_be_drafted[0]
 
         # Remove the captains from the list of players
@@ -55,7 +54,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         await asyncio.sleep(2)
 
         # call make_teams function
-        await ctx.invoke(self.choose_teams, captain_blue=captain_blue, captain_red=captain_red)
+        await self.choose_teams(ctx, captain_blue, captain_red)
 
     @draw_captains.before_invoke
     async def load_players(self, ctx) -> None:  # Pode ser mais rápido
@@ -67,7 +66,7 @@ class Matches(commands.Cog, name="MatchesCog"):
                 "No momento não é possível carregar os jogadores. Por favor, tente mais tarde"
             )
             raise commands.CommandError("Erro ao carregar jogadores.")
-        
+
         # Check if there are enough players to start the draft
         if len(self.players) < 10:
             await ctx.send("Não há jogadores suficientes para o sorteio.")
@@ -82,20 +81,20 @@ class Matches(commands.Cog, name="MatchesCog"):
         team_blue = models.TeamModel(players=[captain_blue])
         team_red = models.TeamModel(players=[captain_red])
 
-        blue_role = ctx.guild.get_role(RoleID.BLUE)
-        red_role = ctx.guild.get_role(RoleID.RED)
+        blue_role = ctx.guild.get_role(RoleID.BLUE.value)
+        red_role = ctx.guild.get_role(RoleID.RED.value)
 
-        blue_channel = ctx.guild.get_channel(ChannelID.BLUE)
-        red_channel = ctx.guild.get_channel(ChannelID.RED)
+        blue_channel = ctx.guild.get_channel(ChannelID.BLUE.value)
+        red_channel = ctx.guild.get_channel(ChannelID.RED.value)
 
         # Clear team blue and team red roles
-        await ctx.invoke(self.bot.getcommand("clear_roles"), roles=[blue_role, red_role])
+        await ctx.invoke(
+            self.bot.get_command("clear_roles"), roles=[blue_role, red_role]
+        )
 
         choose_captain_blue = True
 
         await ctx.send("Hora de escolher seus times!")
-
-        await clear_roles(roles=[blue_role, red_role])
 
         await ctx.send(f"<@{captain_blue.discord_uid}> você começa!")
 
@@ -114,7 +113,9 @@ class Matches(commands.Cog, name="MatchesCog"):
                     """Callback para cada botão."""
                     nonlocal choose_captain_blue
 
-                    current_captain = captain_blue if choose_captain_blue else captain_red
+                    current_captain = (
+                        captain_blue if choose_captain_blue else captain_red
+                    )
                     next_captain = captain_red if choose_captain_blue else captain_blue
 
                     # if the player is not the current captain then return
@@ -137,9 +138,11 @@ class Matches(commands.Cog, name="MatchesCog"):
                     member = await player.to_member(interaction)
                     if member:
                         channel = blue_channel if choose_captain_blue else red_channel
-                        member.add_roles(blue_role if choose_captain_blue else red_role)
-                        move_user_to_channel(member, channel)
-                        
+                        await member.add_roles(
+                            blue_role if choose_captain_blue else red_role
+                        )
+                        await move_user_to_channel(member, channel)
+
                     # if the teams is full, show the teams and create the match
                     if len(team_blue.players) == 5 and len(team_red.players) == 5:
                         self.all_chosen_event.set()
@@ -152,7 +155,9 @@ class Matches(commands.Cog, name="MatchesCog"):
                     else:
                         # this lets the captain of team b to choose two players in a row if there's only three remaining players
                         if len(team_red.players) != 4:
-                            next_captain = captain_red if choose_captain_blue else captain_blue
+                            next_captain = (
+                                captain_red if choose_captain_blue else captain_blue
+                            )
                             choose_captain_blue = not choose_captain_blue
                             message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de <@{next_captain.discord_uid}> escolher."
                         else:
