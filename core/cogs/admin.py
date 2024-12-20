@@ -14,8 +14,8 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
         self.task_clear_message.start()
         self.task_clear_teams_roles.start()
 
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message) -> None:
+    @commands.Cog.listener("on_message")
+    async def show_players(self, message: discord.Message) -> None:
         if message.is_system() or message.channel.id != 1243897099398021182:
             return
 
