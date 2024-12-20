@@ -5,8 +5,8 @@ class Fun(commands.Cog, name="FunCog"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
+    @commands.Cog.listener("on_message")
+    async def fun_reactions(self, message):
         if message.author == self.bot.user:
             return
         if message.content.lower() == "ping":
