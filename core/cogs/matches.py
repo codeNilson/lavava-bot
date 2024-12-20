@@ -19,7 +19,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         self.players = []
         self.all_chosen_event = None
 
-    @commands.has_role(1309641234868080710)
+    @commands.has_role(RoleID.STAFF.value)
     @commands.command(name="draw_captains", aliases=["sorteio"])
     async def draw_captains(self, ctx):
         """
