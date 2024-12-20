@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 from utils.cogs import add_cogs
+from utils.enums import RoleID
 import settings
 
 
@@ -31,9 +32,8 @@ class LavavaBot(commands.Bot):
             await ctx.send("Ocorreu um erro ao executar esse comando.")
 
     async def on_member_join(self, member):
-        CARGO_PLAYER = 1309639892791332905  # pylint: disable=invalid-name
         settings.LOGGER.info("User %s joined the server", member.name)
-        cargo = member.guild.get_role(CARGO_PLAYER)
+        cargo = member.guild.get_role(RoleID.PLAYER.value)
         if cargo:
             await member.add_roles(cargo)
         else:
