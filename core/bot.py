@@ -29,7 +29,7 @@ class LavavaBot(commands.Bot):
             await ctx.send("Esse comando não existe.")
         elif isinstance(error, Exception):
             settings.LOGGER.error("An error occurred: %s", error)
-            await ctx.send("Ocorreu um erro ao executar esse comando.")
+            await ctx.send(f"Ocorreu um erro ao executar esse comando. {error}")
 
     async def on_member_join(self, member):
         settings.LOGGER.info("User %s joined the server", member.name)

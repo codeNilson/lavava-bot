@@ -89,7 +89,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         # Clear team blue and team red roles
         admin_cog = self.bot.get_cog("AdminCog")
-        admin_cog.remove_role(roles=[blue_role, red_role])
+        await admin_cog.remove_roles(roles=[blue_role, red_role])
 
         choose_captain_blue = True
 
