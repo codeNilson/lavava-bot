@@ -5,7 +5,7 @@ from utils.enums import RoleID, ChannelID
 import settings
 
 
-class AdminTasks(commands.Cog, name="AdminTasksCog"):
+class Admin(commands.Cog, name="AdminCog"):
 
     time_to_run = dt_time(hour=3)
 
@@ -15,7 +15,7 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
         self.task_clear_teams_roles.start()
 
     @commands.Cog.listener("on_message")
-    async def show_players(self, message: discord.Message) -> None:
+    async def clean_ranking_channel(self, message: discord.Message) -> None:
         if message.is_system() or message.channel.id != ChannelID.RANKING.value:
             return
 
@@ -102,6 +102,7 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
                     settings.LOGGER.warning(
                         "Erro ao remover cargo %s de %s: %s", role, member, e
                     )
+        settings.LOGGER.info("Cargos removidos com sucesso.")
 
     @tasks.loop(time=time_to_run)
     async def task_clear_message(self, *, channel: discord.TextChannel = None):
@@ -126,7 +127,7 @@ class AdminTasks(commands.Cog, name="AdminTasksCog"):
         else:
             settings.LOGGER.info("Papéis de times limpos com sucesso.")
             channel_audit = self.bot.get_channel(ChannelID.AUDIT.value)
-            await channel_audit.send("✅ Roles limpas automaticamente.")
+            await channel_audit.send("✅ Cargos limpas automaticamente.")
 
     async def cog_unload(self):
         self.task_clear_message.cancel()
