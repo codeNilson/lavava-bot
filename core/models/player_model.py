@@ -1,4 +1,5 @@
-from urllib.parse import quote
+from urllib.parse import quote, urljoin
+from discord.ext.commands import Context
 from pydantic import BaseModel
 import discord
 import settings
@@ -16,7 +17,8 @@ class PlayerModel(BaseModel):
 
     @property
     def url(self):
-        return f"{settings.SITE_URL}players/profile/{quote(self.username)}"
+        path = f"players/profile/{quote(self.uuid)}"
+        return urljoin(settings.SITE_URL, path)
 
     @property
     def discord_uid(self):
