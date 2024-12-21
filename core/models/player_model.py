@@ -1,6 +1,7 @@
 from urllib.parse import quote
 from pydantic import BaseModel
 import discord
+from discord.ext.commands import Context
 import settings
 
 
