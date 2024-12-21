@@ -27,6 +27,11 @@ class LavavaBot(commands.Bot):
                 "User %s tried to use a command that doesn't exist", ctx.author
             )
             await ctx.send("Esse comando não existe.")
+        elif isinstance(error, discord.HTTPException):
+            settings.LOGGER.error("An error occurred: %s", error)
+            await ctx.send(
+                "Ocorreu um erro ao executar esse comando. Tente novamente mais tarde."
+            )
         elif isinstance(error, Exception):
             settings.LOGGER.error("An error occurred: %s", error)
             await ctx.send(f"Ocorreu um erro ao executar esse comando. {error}")

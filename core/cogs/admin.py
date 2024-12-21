@@ -48,31 +48,19 @@ class Admin(commands.Cog, name="AdminCog"):
 
     @commands.command(name="clear", aliases=["limpar"])
     @commands.has_role(RoleID.STAFF.value)
-    async def clear_messages(self, ctx, *, channel_name: str) -> None:
+    async def clear_messages(
+        self, ctx, channels: commands.Greedy[discord.TextChannel]
+    ) -> None:
         """Clear messages from the channel"""
-        channel = discord.utils.get(ctx.guild.channels, name=channel_name)
 
-        if not channel or not isinstance(channel, discord.TextChannel):
+        if not channels:
             await ctx.send(
-                f"⚠️ Canal {channel_name} não encontrado. \
-                Verifique o nome do canal e tente novamente."
+                "⚠️ Nenhum canal fornecido. Por favor, forneça um ou mais canais."
             )
             return
 
-        try:
+        for channel in channels:
             await channel.purge(limit=None)
-            await ctx.send(f"Canal {channel_name} limpo com sucesso.")
-        except discord.Forbidden:
-            settings.LOGGER.warning("Permissão negada ao limpar canal %s", channel_name)
-            await ctx.send(
-                f"⚠️ Não foi possível limpar o canal {channel_name} devido \
-                a permissões insuficientes."
-            )
-        except discord.HTTPException as e:
-            settings.LOGGER.warning("Erro ao limpar canal %s: %s", channel_name, e)
-            await ctx.send(
-                f"⚠️ Não foi possível limpar o canal {channel_name} devido a um erro."
-            )
 
     @commands.command(name="clear_roles", aliases=["limpar_cargos"])
     @commands.has_role(RoleID.STAFF.value)
