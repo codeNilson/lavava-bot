@@ -15,13 +15,14 @@ class Admin(commands.Cog, name="AdminCog"):
         self.task_clear_teams_roles.start()
 
     @commands.Cog.listener("on_message")
+    @commands.has_role(RoleID.STAFF.value)
     async def clean_ranking_channel(self, message: discord.Message) -> None:
         if message.is_system() or message.channel.id != ChannelID.RANKING.value:
             return
 
         channel = message.channel
 
-        if message.webhook_id:
+        if message.webhook_id == 1309823159540645950:
             try:
                 async for m in channel.history(limit=None):
                     if m != message:
@@ -46,8 +47,13 @@ class Admin(commands.Cog, name="AdminCog"):
                     "⚠️ Não foi possível deletar uma mensagem devido a um erro."
                 )
 
-    @commands.command(name="clear", aliases=["limpar"])
+    @commands.group(name="clean", aliases=["limpar"])
     @commands.has_role(RoleID.STAFF.value)
+    async def clean(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send("⚠️ Use 'clean mensagens' ou 'clean cargos'.")
+
+    @clean.command(name="messages", aliases=["mensagens"])
     async def clear_messages(
         self, ctx, channels: commands.Greedy[discord.TextChannel]
     ) -> None:
@@ -62,8 +68,7 @@ class Admin(commands.Cog, name="AdminCog"):
         for channel in channels:
             await channel.purge(limit=None)
 
-    @commands.command(name="clear_roles", aliases=["limpar_cargos"])
-    @commands.has_role(RoleID.STAFF.value)
+    @clean.command(name="roles", aliases=["cargos"])
     async def clear_roles(self, ctx, roles: commands.Greedy[discord.Role]) -> None:
         """Clear roles from members"""
 
