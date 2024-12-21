@@ -8,8 +8,12 @@ class Players(commands.Cog, name="PlayersCog"):
         self.bot = bot
 
     @commands.command(name="player", aliases=["jogador"])
-    async def show_player(self, ctx, *, player: Player):
+    async def show_player(self, ctx, players: commands.Greedy[Player]):
 
+        for player in players:
+            await self._send_player_embed(ctx, player)
+
+    async def _send_player_embed(self, ctx, player):
         discord_user = f"<@{player.discord_uid}>"
 
         embed = discord.Embed(

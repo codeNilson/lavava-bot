@@ -52,6 +52,15 @@ class ApiClient:
                 data = await response.json()
                 return models.PlayerModel(**data)
 
+    async def get_player_by_uid(self, uid: int) -> models.PlayerModel:
+        player_detail_endpoint = f"{API_ENDPOINTS.get('players')}by-uid/{uid}"
+        async with self._session_context() as session:
+            async with session.get(player_detail_endpoint) as response:
+                if response.status == 404:
+                    return None
+                data = await response.json()
+                return models.PlayerModel(**data)
+
     async def create_match(self):
         # acrescentar tratamento de erro
         async with self._session_context() as session:
