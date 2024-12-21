@@ -59,13 +59,7 @@ class Matches(commands.Cog, name="MatchesCog"):
     @draw_captains.before_invoke
     async def load_players(self, ctx) -> None:  # Pode ser mais rápido
         """Load all players from the api"""
-        try:
-            self.players = await api_client.get_all_players()
-        except settings.LoginError:
-            await ctx.send(
-                "No momento não é possível carregar os jogadores. Por favor, tente mais tarde"
-            )
-            raise commands.CommandError("Erro ao carregar jogadores.")
+        self.players = await api_client.get_all_players()
 
         # Check if there are enough players to start the draft
         if len(self.players) < 10:

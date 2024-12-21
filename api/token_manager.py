@@ -59,19 +59,10 @@ class TokenManager:
                     try:
                         response.raise_for_status()
                     except aiohttp.ClientResponseError as e:
-                        error_content = await response.text()
-                        settings.LOGGER.error(
-                            "Erro ao fazer login: %(status)s - %(message)s, Resposta: %(content)s",
-                            {
-                                "status": e.status,
-                                "message": e.message,
-                                "content": error_content,
-                            },
-                        )
                         raise LoginError(
                             f"Erro ao tentar fazer login na URL {self.authentication_endpoint} com as credenciais fornecidas. "
-                            f"Código de status: {e.status}. Mensagem de erro: {e.message}. Resposta do servidor: {error_content}"
-                        )
+                            f"Código de status: {e.status}. Mensagem de erro: {e.message}."
+                        ) from e
 
                     settings.LOGGER.info(
                         "Login na API realizado com sucesso, status: %(status)s",
@@ -82,16 +73,12 @@ class TokenManager:
                     return self.access_token
 
         except aiohttp.ClientConnectionError as e:
-            settings.LOGGER.error(
-                "Erro de conexão ao tentar acessar %(url)s: %(error)s",
-                {"url": self.authentication_endpoint, "error": str(e)},
-            )
-            raise LoginError("Erro ao conectar ao servidor.")
+            message = f"Erro de conexão ao tentar acessar {self.authentication_endpoint}: {str(e)}"
+            raise LoginError(message) from e
+
         except aiohttp.ClientError as e:
-            settings.LOGGER.error(
-                "Erro desconhecido no cliente: %(error)s", {"error": str(e)}
-            )
-            raise LoginError("Erro inesperado ao usar o cliente HTTP.")
+            message = f"Erro desconhecido no cliente: {str(e)}"
+            raise LoginError(message) from e
 
     async def _refresh_access_token(self) -> None:
         body = {

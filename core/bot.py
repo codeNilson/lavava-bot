@@ -2,6 +2,7 @@ from discord.ext import commands
 import discord
 from utils.cogs import add_cogs
 from utils.enums import RoleID
+from settings.errors import LoginError
 import settings
 
 
@@ -32,9 +33,16 @@ class LavavaBot(commands.Bot):
             await ctx.send(
                 "Ocorreu um erro ao executar esse comando. Tente novamente mais tarde."
             )
+        elif isinstance(error, LoginError):
+            settings.LOGGER.warning("An error occurred: %s", error)
+            await ctx.send(
+                "No momento não é possível concluir essa ação. Tente novamente mais tarde."
+            )
         elif isinstance(error, Exception):
             settings.LOGGER.error("An error occurred: %s", error)
-            await ctx.send(f"Ocorreu um erro ao executar esse comando. {error}")
+            await ctx.send(
+                "Ocorreu um erro ao executar esse comando. Por favor, tente mais tarde"
+            )
 
     async def on_member_join(self, member):
         settings.LOGGER.info("User %s joined the server", member.name)
