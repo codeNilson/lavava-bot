@@ -88,9 +88,8 @@ class Matches(commands.Cog, name="MatchesCog"):
         red_channel = ctx.guild.get_channel(ChannelID.RED.value)
 
         # Clear team blue and team red roles
-        await ctx.invoke(
-            self.bot.get_command("clear_roles"), roles=[blue_role, red_role]
-        )
+        admin_cog = self.bot.get_cog("AdminCog")
+        admin_cog.remove_role(roles=[blue_role, red_role])
 
         choose_captain_blue = True
 
