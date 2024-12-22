@@ -89,7 +89,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         await ctx.send("Hora de escolher seus times!")
 
-        await ctx.send(f"<@{captain_blue.discord_uid}> você começa!")
+        await ctx.send(f"<@{captain_blue.discord_uid or captain_blue.username}> você começa!")
 
         async def update_view():
             view = View(timeout=180)
