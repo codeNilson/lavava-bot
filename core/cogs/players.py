@@ -14,7 +14,7 @@ class Players(commands.Cog, name="PlayersCog"):
             await self._send_player_embed(ctx, player)
 
     async def _send_player_embed(self, ctx, player):
-        discord_user = f"<@{player.discord_uid}>"
+        discord_user = f"{str(player)}>"
 
         embed = discord.Embed(
             title=f"{player.username}",

@@ -47,9 +47,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         self.players.remove(captain_blue)
         self.players.remove(captain_red)
 
-        await ctx.send(
-            f"Capitão A: <@{captain_blue.discord_uid or captain_blue.username}>\nCapitão B: <@{captain_red.discord_uid or captain_blue.username}>"
-        )
+        await ctx.send(f"Capitão A: {str(captain_blue)}\nCapitão B: {str(captain_red)}")
 
         await asyncio.sleep(2)
 
@@ -89,7 +87,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         await ctx.send("Hora de escolher seus times!")
 
-        await ctx.send(f"<@{captain_blue.discord_uid or captain_blue.username}> você começa!")
+        await ctx.send(f"{str(captain_blue)}> você começa!")
 
         async def update_view():
             view = View(timeout=180)
@@ -152,9 +150,9 @@ class Matches(commands.Cog, name="MatchesCog"):
                                 captain_red if choose_captain_blue else captain_blue
                             )
                             choose_captain_blue = not choose_captain_blue
-                            message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de <@{next_captain.discord_uid}> escolher."
+                            message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de {str(next_captain)} escolher."
                         else:
-                            message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de <@{current_captain.discord_uid}> escolher."
+                            message_content = f"Jogador {player.username} foi escolhido! Agora é a vez de {str(current_captain)}> escolher."
 
                         await interaction.response.edit_message(
                             content=message_content,

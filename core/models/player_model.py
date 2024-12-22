@@ -39,4 +39,4 @@ class PlayerModel(BaseModel):
         return None
 
     def __str__(self):
-        return self.username or "Player Desconhecido"
+        return "<@{self.discord_uid}>" if self.discord_uid else self.username
