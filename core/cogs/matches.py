@@ -48,7 +48,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         self.players.remove(captain_red)
 
         await ctx.send(
-            f"Capitão A: <@{captain_blue.discord_uid}>\nCapitão B: <@{captain_red.discord_uid}>"
+            f"Capitão A: <@{captain_blue.discord_uid or captain_blue.username}>\nCapitão B: <@{captain_red.discord_uid or captain_blue.username}>"
         )
 
         await asyncio.sleep(2)
