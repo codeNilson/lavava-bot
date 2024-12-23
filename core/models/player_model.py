@@ -2,7 +2,6 @@ from urllib.parse import quote, urljoin
 from discord.ext.commands import Context
 from pydantic import BaseModel
 import discord
-from discord.ext.commands import Context
 import settings
 
 
@@ -18,7 +17,7 @@ class PlayerModel(BaseModel):
 
     @property
     def url(self):
-        path = f"players/profile/{quote(self.uuid)}"
+        path = f"players/profile/{quote(self.username)}"
         return urljoin(settings.SITE_URL, path)
 
     @property
@@ -31,6 +30,10 @@ class PlayerModel(BaseModel):
                 return int(social_account["uid"])
         return None
 
+    @property
+    def mention(self):
+        return f"<@{self.discord_uid}>" if self.discord_uid else self.username
+
     async def to_member(self, ctx: Context) -> discord.Member | None:
         member_uid = self.discord_uid
         if member_uid:
@@ -39,4 +42,4 @@ class PlayerModel(BaseModel):
         return None
 
     def __str__(self):
-        return f"<@{self.discord_uid}>" if self.discord_uid else self.username
+        return self.username

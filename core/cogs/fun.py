@@ -14,4 +14,8 @@ class Fun(commands.Cog, name="FunCog"):
         if message.content.lower() in ("natan", "nathan"):
             await message.add_reaction("🐂")
         if message.content.lower() == "eric":
-            await message.add_reaction("🃏")
+            await message.add_reaction("💩")
+        if message.content.lower() in ("leo", "leozin"):
+            await message.add_reaction("🤏🏻")
+        if message.content.lower() in ("catherine", "cath", "cat"):
+            await message.add_reaction("👩🏻‍🦯‍➡️")

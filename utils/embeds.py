@@ -3,8 +3,8 @@ import discord
 
 async def show_teams(ctx, team_a, team_b):
 
-    players_team_a = [f"⚔️ {str(player)}" for player in team_a.players]
-    players_team_b = [f"🛡️ {str(player)}" for player in team_b.players]
+    players_team_a = [f"⚔️ {player.mention}" for player in team_a.players]
+    players_team_b = [f"🛡️ {player.mention}" for player in team_b.players]
 
     embed = discord.Embed(
         title="Times escolhidos!",

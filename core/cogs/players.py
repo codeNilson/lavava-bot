@@ -14,7 +14,6 @@ class Players(commands.Cog, name="PlayersCog"):
             await self._send_player_embed(ctx, player)
 
     async def _send_player_embed(self, ctx, player):
-        discord_user = f"{str(player)}>"
 
         embed = discord.Embed(
             title=f"{player.username}",
@@ -28,7 +27,7 @@ class Players(commands.Cog, name="PlayersCog"):
 
         embed.add_field(
             name="Usuário",
-            value=discord_user if player.discord_uid else "N/A",
+            value=player.mention,
         )
         embed.add_field(
             name="Agente Principal",
