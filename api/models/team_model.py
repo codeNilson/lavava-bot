@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from core import models
+from api import models
 
 
 class TeamModel(BaseModel):

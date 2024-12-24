@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 import aiohttp
 from api.token_manager import TokenManager
-from core import models
+from api import models
 import settings
 
 CLIENT_CREDENTIALS = {

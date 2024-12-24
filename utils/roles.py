@@ -1,6 +1,6 @@
 import discord
 from discord import Role
-from core.models.player_model import PlayerModel
+from api.models.player_model import PlayerModel
 
 
 async def add_roles(ctx, role: Role, users: list[PlayerModel | discord.Member]):

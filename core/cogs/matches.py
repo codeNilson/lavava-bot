@@ -2,25 +2,27 @@ import asyncio
 import random
 import discord
 from discord.ext import commands
-from discord.ui import View, Button
+from discord.ui import Button
 import settings
 from api.api_client import api_client
-from core import models
+from api import models
 from utils.embeds import show_teams
 from utils.admin import move_user_to_channel
 from utils.enums import RoleID, ChannelID
+from core.ui.view import PlayersView as View
 
 
 class Matches(commands.Cog, name="MatchesCog"):
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
         self.players = []
         self.captain_blue = None
         self.captain_red = None
+        self.blue_channel = self.bot.get_channel(ChannelID.BLUE.value)
+        self.red_channel = self.bot.get_channel(ChannelID.RED.value)
         self.is_blue_captain_turn = True
-        self.all_chosen_event = None
         self.admin_cog = self.bot.get_cog("AdminCog")
 
     @commands.has_role(RoleID.STAFF.value)
@@ -81,9 +83,6 @@ class Matches(commands.Cog, name="MatchesCog"):
 
     async def _choose_teams(self, ctx):
 
-        # Initialize the event that will be set when all players are chosen
-        self.all_chosen_event = asyncio.Event()
-
         team_blue = models.TeamModel(players=[self.captain_blue])
         team_red = models.TeamModel(players=[self.captain_red])
 
@@ -100,36 +99,26 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         await ctx.send(f"🔵{self.captain_blue.mention} você começa!")
 
+        # Send the message with the buttons to choose the players
+        view = await self._update_view(ctx, team_blue, team_red, blue_role, red_role)
         await ctx.send(
             "Escolha um jogador disponível:",
-            view=await self._update_view(ctx, team_blue, team_red, blue_role, red_role),
+            view=view,
         )
 
-        try:
-            await asyncio.wait_for(self.all_chosen_event.wait(), timeout=180)
-        except asyncio.TimeoutError:
+        # Wait until all players are chosen
+        await view.wait()
+
+        if view.timed_out:
             await ctx.send(
                 "⏳ Tempo esgotado! Nem todos os jogadores foram escolhidos."
             )
             return
 
-        await show_teams(ctx, team_blue, team_red)
-
         await self.create_match(teams=[team_blue, team_red])
 
-    async def create_match(self, teams: list[models.TeamModel]):
-        """Cria as equipes na API."""
-
-        # Create a new match in the API
-        match = await api_client.create_match()
-        # Register the teams in the match
-        for team in teams:
-            team.match = match
-            await api_client.create_team(team=team)
-        settings.LOGGER.info("Equipes criadas com sucesso.")
-
     async def _update_view(self, ctx, team_blue, team_red, blue_role, red_role):
-        view = View(timeout=180)
+        view = View(ctx, timeout=10)
 
         for player in self.players:
 
@@ -141,9 +130,6 @@ class Matches(commands.Cog, name="MatchesCog"):
 
             async def button_callback(interaction, player=player):
                 """Callback para cada botão."""
-
-                blue_channel = ctx.guild.get_channel(ChannelID.BLUE.value)
-                red_channel = ctx.guild.get_channel(ChannelID.RED.value)
 
                 current_captain = (
                     self.captain_blue if self.is_blue_captain_turn else self.captain_red
@@ -171,7 +157,11 @@ class Matches(commands.Cog, name="MatchesCog"):
                 # add role and move player to the channel
                 member = await player.to_member(interaction)
                 if member:
-                    channel = blue_channel if self.is_blue_captain_turn else red_channel
+                    channel = (
+                        self.blue_channel
+                        if self.is_blue_captain_turn
+                        else self.red_channel
+                    )
                     await member.add_roles(
                         blue_role if self.is_blue_captain_turn else red_role
                     )
@@ -179,11 +169,11 @@ class Matches(commands.Cog, name="MatchesCog"):
 
                 # if the teams is full, show the teams and create the match
                 if len(team_blue.players) == 5 and len(team_red.players) == 5:
-                    self.all_chosen_event.set()
                     await interaction.response.edit_message(
                         content="Todos os jogadores foram escolhidos!",
                         view=None,
                     )
+                    await view.stop()
 
                 # if the team is not full change the current captain and start again the process
                 else:
@@ -196,19 +186,35 @@ class Matches(commands.Cog, name="MatchesCog"):
                         )
                         self.is_blue_captain_turn = not self.is_blue_captain_turn
                         emoji = "🔵" if self.is_blue_captain_turn else "🔴"
-                        message_content = f"Jogador {player.mention} foi escolhido! \
-                        Agora é a vez de {emoji + next_captain.mention} escolher."
+                        message_content = f"Jogador {player.mention} foi escolhido! Agora é a vez de {emoji + next_captain.mention} escolher."
                     else:
-                        message_content = f"Jogador {player.mention} foi escolhido! \
-                        🔴{current_captain.mention}, você tem o direito a mais uma escolha."
+                        message_content = f"Jogador {player.mention} foi escolhido! 🔴{current_captain.mention}, você tem o direito a mais uma escolha."
+
+                    for button in view.children:
+                        if button.custom_id == player.username:
+                            button.disabled = True
+                            button.style = (
+                                discord.ButtonStyle.primary
+                                if current_captain == self.captain_blue
+                                else discord.ButtonStyle.danger
+                            )
 
                     await interaction.response.edit_message(
                         content=message_content,
-                        view=await self._update_view(
-                            ctx, team_blue, team_red, blue_role, red_role
-                        ),
+                        view=view,
                     )
 
             button.callback = button_callback
             view.add_item(button)
         return view
+
+    async def create_match(self, teams: list[models.TeamModel]):
+        """Cria as equipes na API."""
+
+        # Create a new match in the API
+        match = await api_client.create_match()
+        # Register the teams in the match
+        for team in teams:
+            team.match = match
+            await api_client.create_team(team=team)
+        settings.LOGGER.info("Equipes criadas com sucesso.")
