@@ -12,3 +12,5 @@ async def move_user_to_channel(member, channel):
             channel.name,
             e.text,
         )
+    except Exception as e:
+        print(e)

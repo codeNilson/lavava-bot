@@ -34,7 +34,10 @@ class PlayerModel(BaseModel):
     def mention(self):
         return f"<@{self.discord_uid}>" if self.discord_uid else self.username
 
-    async def to_member(self, ctx: Context) -> discord.Member | None:
+    async def to_member(
+        self,
+        ctx: Context,
+    ) -> discord.Member | None:
         member_uid = self.discord_uid
         if member_uid:
             member = ctx.guild.get_member(member_uid)

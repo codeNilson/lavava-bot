@@ -2,15 +2,15 @@ import asyncio
 import random
 import discord
 from discord.ext import commands
-from discord.ui import Button
+from discord.ui import Button, View
 import settings
 from api.api_client import api_client
-from api import models
+from api.models.team_model import TeamModel
+from api.models.player_model import PlayerModel
 from settings.errors import MissingPlayersException
-from utils.embeds import show_teams
+from core.ui.embeds import show_teams
 from utils.admin import move_user_to_channel
 from utils.enums import RoleID, ChannelID
-from core.ui.view import PlayersView as View
 
 
 class Matches(commands.Cog, name="MatchesCog"):
@@ -21,8 +21,6 @@ class Matches(commands.Cog, name="MatchesCog"):
         self.players = []
         self.captain_blue = None
         self.captain_red = None
-        self.blue_channel = self.bot.get_channel(ChannelID.BLUE.value)
-        self.red_channel = self.bot.get_channel(ChannelID.RED.value)
         self.is_blue_captain_turn = True
         self.admin_cog = self.bot.get_cog("AdminCog")
 
@@ -81,8 +79,8 @@ class Matches(commands.Cog, name="MatchesCog"):
 
     async def _choose_teams(self, ctx):
 
-        team_blue = models.TeamModel(players=[self.captain_blue])
-        team_red = models.TeamModel(players=[self.captain_red])
+        team_blue = TeamModel(players=[self.captain_blue])
+        team_red = TeamModel(players=[self.captain_red])
 
         blue_role = ctx.guild.get_role(RoleID.BLUE.value)
         red_role = ctx.guild.get_role(RoleID.RED.value)
@@ -105,18 +103,17 @@ class Matches(commands.Cog, name="MatchesCog"):
         )
 
         # Wait until all players are chosen
-        await view.wait()
+        timed_out = await view.wait()
 
-        if view.timed_out:
+        if timed_out:
             await ctx.send(
                 "⏳ Tempo esgotado! Nem todos os jogadores foram escolhidos."
             )
             return
-
         await self.create_match(teams=[team_blue, team_red])
 
     async def _update_view(self, ctx, team_blue, team_red, blue_role, red_role):
-        view = View(ctx, timeout=10)
+        view = View(timeout=180)
 
         for player in self.players:
 
@@ -126,7 +123,7 @@ class Matches(commands.Cog, name="MatchesCog"):
                 custom_id=player.username,
             )
 
-            async def button_callback(interaction, player=player):
+            async def button_callback(interaction, player: PlayerModel = player):
                 """Callback para cada botão."""
 
                 current_captain = (
@@ -135,6 +132,9 @@ class Matches(commands.Cog, name="MatchesCog"):
                 next_captain = (
                     self.captain_red if self.is_blue_captain_turn else self.captain_blue
                 )
+
+                blue_channel = ctx.guild.get_channel(ChannelID.BLUE.value)
+                red_channel = ctx.guild.get_channel(ChannelID.RED.value)
 
                 # if the player is not the current captain then return
                 if interaction.user.id != current_captain.discord_uid:
@@ -155,11 +155,7 @@ class Matches(commands.Cog, name="MatchesCog"):
                 # add role and move player to the channel
                 member = await player.to_member(interaction)
                 if member:
-                    channel = (
-                        self.blue_channel
-                        if self.is_blue_captain_turn
-                        else self.red_channel
-                    )
+                    channel = blue_channel if self.is_blue_captain_turn else red_channel
                     await member.add_roles(
                         blue_role if self.is_blue_captain_turn else red_role
                     )
@@ -167,11 +163,15 @@ class Matches(commands.Cog, name="MatchesCog"):
 
                 # if the teams is full, show the teams and create the match
                 if len(team_blue.players) == 5 and len(team_red.players) == 5:
+
+                    embed_team = await show_teams(ctx, team_blue, team_red)
+
                     await interaction.response.edit_message(
                         content="Todos os jogadores foram escolhidos!",
                         view=None,
+                        embed=embed_team,
                     )
-                    await view.stop()
+                    view.stop()
 
                 # if the team is not full change the current captain and start again the process
                 else:
@@ -206,7 +206,7 @@ class Matches(commands.Cog, name="MatchesCog"):
             view.add_item(button)
         return view
 
-    async def create_match(self, teams: list[models.TeamModel]):
+    async def create_match(self, teams: list[TeamModel]):
         """Cria as equipes na API."""
 
         # Create a new match in the API
