@@ -17,6 +17,9 @@ class Matches(commands.Cog, name="MatchesCog"):
         super().__init__()
         self.bot = bot
         self.players = []
+        self.captain_blue = None
+        self.captain_red = None
+        self.is_blue_captain_turn = True
         self.all_chosen_event = None
         self.admin_cog = self.bot.get_cog("AdminCog")
 
@@ -43,23 +46,25 @@ class Matches(commands.Cog, name="MatchesCog"):
             return
 
         # Randomly select two players to be the captains
-        captain_blue = random.choice(wants_to_be_drafted)
-        wants_to_be_drafted.remove(captain_blue)  # Remove the captain from the list
-        captain_red = random.choice(wants_to_be_drafted)
-        wants_to_be_drafted.remove(captain_red)  # Remove the captain from the list
+        self.captain_blue = random.choice(wants_to_be_drafted)
+        wants_to_be_drafted.remove(
+            self.captain_blue
+        )  # Remove the captain from the list
+        self.captain_red = random.choice(wants_to_be_drafted)
+        wants_to_be_drafted.remove(self.captain_red)  # Remove the captain from the list
 
-        # Remove the captains from the list of players
-        self.players.remove(captain_blue)
-        self.players.remove(captain_red)
+        # Remove the captains from the list of available players
+        self.players.remove(self.captain_blue)
+        self.players.remove(self.captain_red)
 
         await ctx.send(
-            f"Capitão 🔵: {captain_blue.mention}\nCapitão 🔴: {captain_red.mention}"
+            f"Capitão 🔵: {self.captain_blue.mention}\nCapitão 🔴: {self.captain_red.mention}"
         )
 
         await asyncio.sleep(2)
 
         # call make_teams function
-        await self._choose_teams(ctx, captain_blue, captain_red)
+        await self._choose_teams(ctx)
 
     @draw_captains.before_invoke
     async def _load_players(self, ctx) -> None:  # Pode ser mais rápido
@@ -74,108 +79,30 @@ class Matches(commands.Cog, name="MatchesCog"):
                 Total de jogadores: {len(self.players)}"
             )
 
-    async def _choose_teams(self, ctx, captain_blue, captain_red):
+    async def _choose_teams(self, ctx):
 
+        # Initialize the event that will be set when all players are chosen
         self.all_chosen_event = asyncio.Event()
 
-        team_blue = models.TeamModel(players=[captain_blue])
-        team_red = models.TeamModel(players=[captain_red])
+        team_blue = models.TeamModel(players=[self.captain_blue])
+        team_red = models.TeamModel(players=[self.captain_red])
 
         blue_role = ctx.guild.get_role(RoleID.BLUE.value)
         red_role = ctx.guild.get_role(RoleID.RED.value)
 
-        blue_channel = ctx.guild.get_channel(ChannelID.BLUE.value)
-        red_channel = ctx.guild.get_channel(ChannelID.RED.value)
-
         # Clear team blue and team red roles
         await self.admin_cog.remove_roles(roles=[blue_role, red_role])
 
-        is_blue_captain_turn = True
+        # Reset self.is_blue_captain_turn
+        self.is_blue_captain_turn = True
 
         await ctx.send("Hora de escolher seus times!")
 
-        await ctx.send(f"🔵{captain_blue.mention} você começa!")
-
-        async def update_view():
-            view = View(timeout=180)
-
-            for player in self.players:
-
-                button = Button(
-                    label=player.username,
-                    style=discord.ButtonStyle.secondary,
-                    custom_id=player.username,
-                )
-
-                async def button_callback(interaction, player=player):
-                    """Callback para cada botão."""
-                    nonlocal is_blue_captain_turn
-
-                    current_captain = (
-                        captain_blue if is_blue_captain_turn else captain_red
-                    )
-                    next_captain = captain_red if is_blue_captain_turn else captain_blue
-
-                    # if the player is not the current captain then return
-                    if interaction.user.id != current_captain.discord_uid:
-                        await interaction.response.send_message(
-                            "Não é sua vez de escolher!",
-                            ephemeral=True,
-                            delete_after=5,
-                        )
-                        return
-
-                    # add player to the team of the current captain
-                    team = team_blue if is_blue_captain_turn else team_red
-                    team.add_player(player)
-
-                    # remove player from the list of available players
-                    self.players.remove(player)
-
-                    # add role and move player to the channel
-                    member = await player.to_member(interaction)
-                    if member:
-                        channel = blue_channel if is_blue_captain_turn else red_channel
-                        await member.add_roles(
-                            blue_role if is_blue_captain_turn else red_role
-                        )
-                        await move_user_to_channel(member, channel)
-
-                    # if the teams is full, show the teams and create the match
-                    if len(team_blue.players) == 5 and len(team_red.players) == 5:
-                        self.all_chosen_event.set()
-                        await interaction.response.edit_message(
-                            content="Todos os jogadores foram escolhidos!",
-                            view=None,
-                        )
-
-                    # if the team is not full change the current captain and start again the process
-                    else:
-                        # this lets the captain of team b to choose two players in a row if there's only three remaining players
-                        if len(team_red.players) != 4:
-                            next_captain = (
-                                captain_red if is_blue_captain_turn else captain_blue
-                            )
-                            is_blue_captain_turn = not is_blue_captain_turn
-                            emoji = "🔵" if is_blue_captain_turn else "🔴"
-                            message_content = f"Jogador {player.mention} foi escolhido! \
-                            Agora é a vez de {emoji + next_captain.mention} escolher."
-                        else:
-                            message_content = f"Jogador {player.mention} foi escolhido! \
-                            🔴{current_captain.mention}, você tem o direito a mais uma escolha."
-
-                        await interaction.response.edit_message(
-                            content=message_content,
-                            view=await update_view(),
-                        )
-
-                button.callback = button_callback
-                view.add_item(button)
-            return view
+        await ctx.send(f"🔵{self.captain_blue.mention} você começa!")
 
         await ctx.send(
             "Escolha um jogador disponível:",
-            view=await update_view(),
+            view=await self._update_view(ctx, team_blue, team_red, blue_role, red_role),
         )
 
         try:
@@ -200,3 +127,88 @@ class Matches(commands.Cog, name="MatchesCog"):
             team.match = match
             await api_client.create_team(team=team)
         settings.LOGGER.info("Equipes criadas com sucesso.")
+
+    async def _update_view(self, ctx, team_blue, team_red, blue_role, red_role):
+        view = View(timeout=180)
+
+        for player in self.players:
+
+            button = Button(
+                label=player.username,
+                style=discord.ButtonStyle.secondary,
+                custom_id=player.username,
+            )
+
+            async def button_callback(interaction, player=player):
+                """Callback para cada botão."""
+
+                blue_channel = ctx.guild.get_channel(ChannelID.BLUE.value)
+                red_channel = ctx.guild.get_channel(ChannelID.RED.value)
+
+                current_captain = (
+                    self.captain_blue if self.is_blue_captain_turn else self.captain_red
+                )
+                next_captain = (
+                    self.captain_red if self.is_blue_captain_turn else self.captain_blue
+                )
+
+                # if the player is not the current captain then return
+                if interaction.user.id != current_captain.discord_uid:
+                    await interaction.response.send_message(
+                        "Não é sua vez de escolher!",
+                        ephemeral=True,
+                        delete_after=5,
+                    )
+                    return
+
+                # add player to the team of the current captain
+                team = team_blue if self.is_blue_captain_turn else team_red
+                team.add_player(player)
+
+                # remove player from the list of available players
+                self.players.remove(player)
+
+                # add role and move player to the channel
+                member = await player.to_member(interaction)
+                if member:
+                    channel = blue_channel if self.is_blue_captain_turn else red_channel
+                    await member.add_roles(
+                        blue_role if self.is_blue_captain_turn else red_role
+                    )
+                    await move_user_to_channel(member, channel)
+
+                # if the teams is full, show the teams and create the match
+                if len(team_blue.players) == 5 and len(team_red.players) == 5:
+                    self.all_chosen_event.set()
+                    await interaction.response.edit_message(
+                        content="Todos os jogadores foram escolhidos!",
+                        view=None,
+                    )
+
+                # if the team is not full change the current captain and start again the process
+                else:
+                    # this lets the captain of team b to choose two players in a row if there's only three remaining players
+                    if len(team_red.players) != 4:
+                        next_captain = (
+                            self.captain_red
+                            if self.is_blue_captain_turn
+                            else self.captain_blue
+                        )
+                        self.is_blue_captain_turn = not self.is_blue_captain_turn
+                        emoji = "🔵" if self.is_blue_captain_turn else "🔴"
+                        message_content = f"Jogador {player.mention} foi escolhido! \
+                        Agora é a vez de {emoji + next_captain.mention} escolher."
+                    else:
+                        message_content = f"Jogador {player.mention} foi escolhido! \
+                        🔴{current_captain.mention}, você tem o direito a mais uma escolha."
+
+                    await interaction.response.edit_message(
+                        content=message_content,
+                        view=await self._update_view(
+                            ctx, team_blue, team_red, blue_role, red_role
+                        ),
+                    )
+
+            button.callback = button_callback
+            view.add_item(button)
+        return view
