@@ -6,6 +6,7 @@ from discord.ui import Button
 import settings
 from api.api_client import api_client
 from api import models
+from settings.errors import MissingPlayersException
 from utils.embeds import show_teams
 from utils.admin import move_user_to_channel
 from utils.enums import RoleID, ChannelID
@@ -42,8 +43,7 @@ class Matches(commands.Cog, name="MatchesCog"):
         # If there's less than 2 players, return
         if len(wants_to_be_drafted) < 2:
             await ctx.send(
-                f"Só é possível sortear com no mínimo 2 jogadores. \
-                Atualmente há {len(wants_to_be_drafted)} jogadores disponíveis."
+                f"Só é possível sortear com no mínimo 2 jogadores. Atualmente há {len(wants_to_be_drafted)} jogadores disponíveis."
             )
             return
 
@@ -75,10 +75,8 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         # Check if there are enough players to start the draft
         if len(self.players) < 10:
-            await ctx.send("Não há jogadores suficientes para o sorteio.")
-            raise commands.CommandError(
-                f"É necessário ter pelo menos 10 jogadores para concluir o sorteio. \
-                Total de jogadores: {len(self.players)}"
+            raise MissingPlayersException(
+                "⚠️ Não há jogadores suficientes para o sorteio."
             )
 
     async def _choose_teams(self, ctx):
