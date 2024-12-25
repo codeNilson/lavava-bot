@@ -66,7 +66,7 @@ class Admin(commands.Cog, name="AdminCog"):
         # await interaction.response.defer(thinking=True)
         await channel.purge(limit=None)
         await interaction.response.send_message(
-            "Mensagens removidas com sucesso.", ephemeral=True, delete_after=5
+            "✅ Mensagens removidas com sucesso.", ephemeral=True, delete_after=5
         )
 
     @group_clean.command(name="roles", description="Limpa os membros de um cargo.")
