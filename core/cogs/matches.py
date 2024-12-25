@@ -22,11 +22,11 @@ class Matches(commands.Cog, name="MatchesCog"):
         self.captain_blue = None
         self.captain_red = None
         self.is_blue_captain_turn = True
-        self.admin_cog = self.bot.get_cog("AdminCog")
+        self.admin_cog: commands.Cog = self.bot.get_cog("AdminCog")
 
     @commands.has_role(RoleID.STAFF.value)
     @commands.command(name="draw_captains", aliases=["sorteio"])
-    async def draw_captains(self, ctx):
+    async def draw_captains(self, ctx: commands.Context) -> None:
         """
         Begin the draft process by randomly selecting two players to be the captains.
         """
@@ -77,7 +77,7 @@ class Matches(commands.Cog, name="MatchesCog"):
                 "⚠️ Não há jogadores suficientes para o sorteio."
             )
 
-    async def _choose_teams(self, ctx):
+    async def _choose_teams(self, ctx: commands.Context) -> None:
 
         team_blue = TeamModel(players=[self.captain_blue])
         team_red = TeamModel(players=[self.captain_red])
@@ -112,7 +112,14 @@ class Matches(commands.Cog, name="MatchesCog"):
             return
         await self.create_match(teams=[team_blue, team_red])
 
-    async def _update_view(self, ctx, team_blue, team_red, blue_role, red_role):
+    async def _update_view(
+        self,
+        ctx: commands.Context,
+        team_blue,
+        team_red,
+        blue_role: discord.Role,
+        red_role: discord.Role,
+    ) -> View:
         view = View(timeout=180)
 
         for player in self.players:

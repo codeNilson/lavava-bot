@@ -10,7 +10,9 @@ class LavavaBot(commands.Bot):
     def __init__(self, command_prefix="!", intents=discord.Intents.default()):
         super().__init__(command_prefix=command_prefix, intents=intents)
 
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(  # pylint: disable=arguments-differ
+        self, ctx: commands.Context, error
+    ):
         if isinstance(error, commands.MissingRole):
             settings.LOGGER.info(
                 "User %s tried to use a command without permission", ctx.author

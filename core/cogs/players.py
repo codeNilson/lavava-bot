@@ -4,16 +4,18 @@ from core.converters.player import Player
 
 
 class Players(commands.Cog, name="PlayersCog"):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(name="player", aliases=["jogador"])
-    async def show_player(self, ctx, players: commands.Greedy[Player]):
+    async def show_player(
+        self, ctx: commands.Context, players: commands.Greedy[Player]
+    ):
 
         for player in players:
             await self._send_player_embed(ctx, player)
 
-    async def _send_player_embed(self, ctx, player):
+    async def _send_player_embed(self, ctx: commands.Context, player):
 
         embed = discord.Embed(
             title=f"{player.username}",

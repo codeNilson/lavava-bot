@@ -2,7 +2,7 @@ import discord
 import settings
 
 
-async def move_user_to_channel(member, channel):
+async def move_user_to_channel(member: discord.Member, channel: discord.VoiceChannel):
     try:
         await member.move_to(channel)
     except discord.HTTPException as e:

@@ -9,7 +9,7 @@ class Admin(commands.Cog, name="AdminCog"):
 
     time_to_run = dt_time(hour=3)
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.task_clear_message.start()
         self.task_clear_teams_roles.start()
@@ -49,13 +49,13 @@ class Admin(commands.Cog, name="AdminCog"):
 
     @commands.group(name="clean", aliases=["limpar"])
     @commands.has_role(RoleID.STAFF.value)
-    async def clean(self, ctx):
+    async def clean(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             await ctx.send("⚠️ Use 'clean mensagens' ou 'clean cargos'.")
 
     @clean.command(name="messages", aliases=["mensagens"])
     async def clear_messages(
-        self, ctx, channels: commands.Greedy[discord.TextChannel]
+        self, ctx: commands.Context, channels: commands.Greedy[discord.TextChannel]
     ) -> None:
         """Clear messages from the channel"""
 
@@ -69,9 +69,10 @@ class Admin(commands.Cog, name="AdminCog"):
             await channel.purge(limit=None)
 
     @clean.command(name="roles", aliases=["cargos"])
-    async def clear_roles(self, ctx, roles: commands.Greedy[discord.Role]) -> None:
+    async def clear_roles(
+        self, ctx: commands.Context, roles: commands.Greedy[discord.Role]
+    ) -> None:
         """Clear roles from members"""
-
         if not roles:
             await ctx.send(
                 "⚠️ Nenhum cargo fornecido. Por favor, forneça um ou mais cargos."

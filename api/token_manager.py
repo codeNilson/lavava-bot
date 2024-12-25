@@ -27,19 +27,19 @@ class TokenManager:
         async with aiohttp.ClientSession() as session:
             yield session
 
-    def _access_token_expired(self):
+    def _access_token_expired(self) -> bool:
         return (
             not self.access_token_expiration
             or datetime.now().timestamp() > self.access_token_expiration
         )
 
-    def _refresh_token_expired(self):
+    def _refresh_token_expired(self) -> bool:
         return (
             not self.refresh_token_expiration
             or datetime.now().timestamp() > self.refresh_token_expiration
         )
 
-    def _update_tokens(self, tokens):
+    def _update_tokens(self, tokens: dict) -> None:
         self.access_token = tokens.get("access", None)
         self.refresh_token = tokens.get("refresh", None)
         self.access_token_expiration = (
@@ -49,7 +49,7 @@ class TokenManager:
             datetime.now().timestamp() + REFRESH_TOKEN_LIFETIME
         )
 
-    async def _login(self):
+    async def _login(self) -> str:
         try:
             async with self._session_context() as session:
                 async with session.post(
@@ -98,7 +98,7 @@ class TokenManager:
         else:
             await self._refresh_access_token()
 
-    async def get_access_token(self):
+    async def get_access_token(self) -> str:
         if self._access_token_expired():
             await self._refresh_or_login()
         return self.access_token

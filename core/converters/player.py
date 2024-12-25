@@ -4,7 +4,7 @@ import settings
 
 
 class Player(commands.Converter):
-    async def convert(self, ctx, input_value: str):
+    async def convert(self, ctx: commands.Context, input_value: str):
         """
         Converte o input_value (username ou menção) em um objeto player.
         Se for uma menção, pega o UID do usuário mencionado.

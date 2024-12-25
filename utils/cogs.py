@@ -5,7 +5,7 @@ from discord.ext import commands
 import settings
 
 
-async def add_cogs(bot):
+async def add_cogs(bot: commands.Bot):
     COGS_PATH = Path(settings.COGS_PATH)
 
     for filepath in COGS_PATH.glob("*.py"):
