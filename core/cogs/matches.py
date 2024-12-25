@@ -10,6 +10,7 @@ from api.models.team_model import TeamModel
 from api.models.player_model import PlayerModel
 from settings.errors import MissingPlayersException
 from core.ui.embeds import teams_embed
+from core.ui.views import PlayersView
 from utils.admin import move_user_to_channel
 from utils.enums import RoleID, ChannelID
 
@@ -102,34 +103,30 @@ class Matches(commands.Cog, name="MatchesCog"):
         await self.channel.send("Hora de escolher seus times!")
 
         await self.channel.send(
-            f"🔵{self.captain_blue.mention} você começa!", delete_after=5
+            f"🔵{self.captain_blue.mention} você começa!", delete_after=15
         )
 
         # Send the message with the buttons to choose the players
-        view = await self._update_view(
-            interaction, team_blue, team_red, blue_role, red_role
-        )
-        await self.channel.send("Escolha um jogador disponível:", view=view)
+        view = await self._update_view(team_blue, team_red, blue_role, red_role)
+        message = await self.channel.send("Escolha um jogador disponível:", view=view)
+
+        view.message = message
 
         # Wait until all players are chosen
         timed_out = await view.wait()
 
         if timed_out:
-            await self.channel.send(
-                "⏳ Tempo esgotado! Nem todos os jogadores foram escolhidos."
-            )
             return
         await self.create_match(teams=[team_blue, team_red])
 
     async def _update_view(
         self,
-        interaction: discord.Interaction,
         team_blue,
         team_red,
         blue_role: discord.Role,
         red_role: discord.Role,
     ) -> View:
-        view = View(timeout=180)
+        view = PlayersView(timeout=180)
 
         for player in self.players:
 
