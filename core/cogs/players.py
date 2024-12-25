@@ -10,14 +10,16 @@ class Players(commands.Cog, name="PlayersCog"):
         self.bot = bot
 
     @app_commands.command(name="info", description="Mostra informações de um jogador.")
-    @app_commands.describe(player="Nome de usuário (site) ou menção do jogador.")
-    async def show_player(self, interaction: discord.Interaction, player: str = None):
+    @app_commands.describe(member="@Jogador")
+    async def show_player(
+        self, interaction: discord.Interaction, member: discord.Member = None
+    ):
         """
         Mostra informações de um ou mais jogadores. @mention ou username.
         """
-        player = player or interaction.user.mention
+        player = member or interaction.user
         player = await Player().convert(interaction, player)
 
-        embed = get_player_embed(interaction, player)
+        embed = get_player_embed(player)
 
         await interaction.response.send_message(embed=embed)
