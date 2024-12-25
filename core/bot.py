@@ -1,5 +1,6 @@
 from discord.ext import commands
 import discord
+from discord import app_commands
 from utils.cogs import add_cogs
 from utils.enums import RoleID
 from settings.errors import LoginError, MissingPlayersException
@@ -7,7 +8,9 @@ import settings
 
 
 class LavavaBot(commands.Bot):
-    def __init__(self, command_prefix="!", intents=discord.Intents.default()):
+    def __init__(
+        self, command_prefix=commands.when_mentioned, intents=discord.Intents.default()
+    ):
         super().__init__(command_prefix=command_prefix, intents=intents)
 
     async def on_command_error(  # pylint: disable=arguments-differ
@@ -53,4 +56,5 @@ class LavavaBot(commands.Bot):
             settings.LOGGER.error("Falha ao adicionar cargo ao usuário %s", member.name)
 
     async def setup_hook(self):
+        await self.tree.sync()
         await add_cogs(self)

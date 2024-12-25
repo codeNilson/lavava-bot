@@ -1,4 +1,5 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
 from core.converters.player import Player
 
@@ -7,20 +8,20 @@ class Players(commands.Cog, name="PlayersCog"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name="player", aliases=["jogador"])
-    async def show_player(
-        self, ctx: commands.Context, players: commands.Greedy[Player]
-    ):
+    @app_commands.command(name="info", description="Mostra informações de um jogador.")
+    @app_commands.describe(player="Nome de usuário (site) ou menção do jogador.")
+    async def show_player(self, interaction: discord.Interaction, player: str = None):
         """
         Mostra informações de um ou mais jogadores. @mention ou username.
         """
-        if not players:
-            players = [await Player().convert(ctx, ctx.author.mention)]
+        player = player or interaction.user.mention
+        player = await Player().convert(interaction, player)
 
-        for player in players:
-            await self._send_player_embed(ctx, player)
+        await self._send_player_embed(interaction, player)
 
-    async def _send_player_embed(self, ctx: commands.Context, player):
+    async def _send_player_embed(
+        self, interaction: discord.Interaction, player: Player
+    ):
 
         embed = discord.Embed(
             title=f"{player.username}",
@@ -42,4 +43,4 @@ class Players(commands.Cog, name="PlayersCog"):
         )
         embed.add_field(name="Ranking", value=player.ranking)
 
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)

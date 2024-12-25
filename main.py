@@ -22,6 +22,6 @@ discord.utils.setup_logging(handler=handler)
 
 # intents.message_content = True
 intents = discord.Intents.all()
-bot = LavavaBot(command_prefix="!", intents=intents)
+bot = LavavaBot(intents=intents)
 
 bot.run(TOKEN)
