@@ -4,15 +4,13 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View
-import settings
 from api.api_client import api_client
-from api.models.team_model import TeamModel
-from api.models.player_model import PlayerModel
-from settings.errors import MissingPlayersException
+from api import models
 from core.ui.embeds import teams_embed
 from core.ui.views import PlayersView
-from utils.admin import move_user_to_channel
-from utils.enums import RoleID, ChannelID
+from utils import move_user_to_channel, RoleID, ChannelID
+import settings
+from settings.errors import MissingPlayersException
 
 
 class Matches(commands.Cog, name="MatchesCog"):
@@ -86,8 +84,8 @@ class Matches(commands.Cog, name="MatchesCog"):
 
     async def _choose_teams(self, interaction: discord.Interaction) -> None:
 
-        team_blue = TeamModel(players=[self.captain_blue])
-        team_red = TeamModel(players=[self.captain_red])
+        team_blue = models.TeamModel(players=[self.captain_blue])
+        team_red = models.TeamModel(players=[self.captain_red])
 
         blue_role = interaction.guild.get_role(RoleID.BLUE.value)
         red_role = interaction.guild.get_role(RoleID.RED.value)
@@ -137,7 +135,7 @@ class Matches(commands.Cog, name="MatchesCog"):
             )
 
             async def button_callback(
-                interaction: discord.Interaction, player: PlayerModel = player
+                interaction: discord.Interaction, player: models.PlayerModel = player
             ):
                 """Callback para cada botão."""
 
@@ -222,7 +220,7 @@ class Matches(commands.Cog, name="MatchesCog"):
             view.add_item(button)
         return view
 
-    async def create_match(self, teams: list[TeamModel]):
+    async def create_match(self, teams: list[models.TeamModel]):
         """Cria as equipes na API."""
 
         # Create a new match in the API

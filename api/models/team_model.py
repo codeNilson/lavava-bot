@@ -1,11 +1,10 @@
 from pydantic import BaseModel
-from api.models.player_model import PlayerModel
-from api.models.match_model import MatchModel
+from api import models
 
 
 class TeamModel(BaseModel):
-    match: MatchModel | None = None
-    players: list[PlayerModel]
+    match: models.MatchModel | None = None
+    players: list[models.PlayerModel]
 
     @property
     def players_uuids(self):
@@ -15,7 +14,7 @@ class TeamModel(BaseModel):
     def players_usernames(self):
         return f"{', '.join([player.username for player in self.players])}"
 
-    def add_player(self, player: PlayerModel):
-        if not isinstance(player, PlayerModel):
+    def add_player(self, player: models.PlayerModel):
+        if not isinstance(player, models.PlayerModel):
             raise ValueError("player must be an instance of PlayerModel")
         self.players.append(player)

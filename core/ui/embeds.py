@@ -1,9 +1,8 @@
 import discord
-from api.models.team_model import TeamModel
-from api.models.player_model import PlayerModel
+from api import models
 
 
-def teams_embed(team_a: TeamModel, team_b: TeamModel) -> discord.Embed:
+def teams_embed(team_a: models.TeamModel, team_b: models.TeamModel) -> discord.Embed:
 
     players_team_a = [f"⚔️ {player.mention}" for player in team_a.players]
     players_team_b = [f"🛡️ {player.mention}" for player in team_b.players]
@@ -18,7 +17,7 @@ def teams_embed(team_a: TeamModel, team_b: TeamModel) -> discord.Embed:
     return embed
 
 
-def get_player_embed(player: PlayerModel):
+def get_player_embed(player: models.PlayerModel):
 
     embed = discord.Embed(
         title=f"{player.username}",
