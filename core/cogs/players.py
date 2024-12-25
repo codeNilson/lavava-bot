@@ -11,6 +11,11 @@ class Players(commands.Cog, name="PlayersCog"):
     async def show_player(
         self, ctx: commands.Context, players: commands.Greedy[Player]
     ):
+        """
+        Mostra informações de um ou mais jogadores. @mention ou username.
+        """
+        if not players:
+            players = [await Player().convert(ctx, ctx.author.mention)]
 
         for player in players:
             await self._send_player_embed(ctx, player)
