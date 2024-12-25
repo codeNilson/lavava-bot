@@ -104,6 +104,7 @@ class Admin(commands.Cog, name="AdminCog"):
     @tasks.loop(time=time_to_run)
     async def task_clear_teams_roles(self):
         guild = self.bot.get_guild(1243610772064698398)  # WIP
+        channel_audit = guild.get_channel(ChannelID.AUDIT.value)
         blue_role = guild.get_role(RoleID.BLUE.value)
         red_role = guild.get_role(RoleID.RED.value)
         roles = [blue_role, red_role]
@@ -114,9 +115,10 @@ class Admin(commands.Cog, name="AdminCog"):
             except Exception as e:
                 settings.LOGGER.warning("Erro ao limpar cargos de times: %s", e)
             else:
-                settings.LOGGER.info("Papéis de times limpos com sucesso.")
-                channel_audit = self.bot.get_channel(ChannelID.AUDIT.value)
-                await channel_audit.send("✅ Cargos limpas automaticamente.")
+                settings.LOGGER.info("Cargo %s limpo com sucesso.", role.name)
+                await channel_audit.send(
+                    f"✅ Cargo {role.name} limpos automaticamente."
+                )
 
     async def cog_unload(self):
         self.task_clear_message.cancel()
