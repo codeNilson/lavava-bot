@@ -48,28 +48,25 @@ class Admin(commands.Cog, name="AdminCog"):
                 )
 
     group_clean = app_commands.Group(
-        name="clean", description="Limpa mensagens ou cargos."
+        name="limpar", description="Limpa mensagens de um canal ou membro de um cargo."
     )
 
-    @group_clean.command(name="messages", description="Limpa mensagens de um canal.")
+    @group_clean.command(name="mensagens", description="Limpa mensagens de um canal.")
     @app_commands.checks.has_role(RoleID.STAFF.value)
     async def clean_messages(
         self, interaction: discord.Interaction, channel: discord.TextChannel
     ) -> None:
         """Clear messages from the channel"""
 
-        if not channel:
-            await interaction.response.send_message(
-                "⚠️ Nenhum canal fornecido. Por favor, forneça um ou mais canais."
-            )
-            return
-        # await interaction.response.defer(thinking=True)
-        await channel.purge(limit=None)
         await interaction.response.send_message(
-            "✅ Mensagens removidas com sucesso.", ephemeral=True, delete_after=5
+            f"Ok, limpando mensagens do canal {channel}.",
+            ephemeral=True,
+            delete_after=30,
         )
+        await channel.purge(limit=None, bulk=True)
+        await interaction.followup.send("✅ Mensagens removidas com sucesso.")
 
-    @group_clean.command(name="roles", description="Limpa os membros de um cargo.")
+    @group_clean.command(name="cargos", description="Limpa os membros de um cargo.")
     @app_commands.checks.has_role(RoleID.STAFF.value)
     async def clean_roles(
         self, interaction: discord.Interaction, role: discord.Role
