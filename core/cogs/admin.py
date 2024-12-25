@@ -1,5 +1,6 @@
 from datetime import time as dt_time
 import discord
+from discord import app_commands
 from discord.ext import commands, tasks
 from utils.enums import RoleID, ChannelID
 import settings
@@ -15,7 +16,6 @@ class Admin(commands.Cog, name="AdminCog"):
         self.task_clear_teams_roles.start()
 
     @commands.Cog.listener("on_message")
-    @commands.has_role(RoleID.STAFF.value)
     async def clean_ranking_channel(self, message: discord.Message) -> None:
         if message.is_system() or message.channel.id != ChannelID.RANKING.value:
             return
@@ -47,55 +47,48 @@ class Admin(commands.Cog, name="AdminCog"):
                     "⚠️ Não foi possível deletar uma mensagem devido a um erro."
                 )
 
-    @commands.group(name="clean", aliases=["limpar"])
-    @commands.has_role(RoleID.STAFF.value)
-    async def clean(self, ctx: commands.Context) -> None:
-        if ctx.invoked_subcommand is None:
-            await ctx.send("⚠️ Use 'clean mensagens' ou 'clean cargos'.")
+    group_clean = app_commands.Group(
+        name="clean", description="Limpa mensagens ou cargos."
+    )
 
-    @clean.command(name="messages", aliases=["mensagens"])
-    async def clear_messages(
-        self, ctx: commands.Context, channels: commands.Greedy[discord.TextChannel]
+    @group_clean.command(name="messages", description="Limpa mensagens de um canal.")
+    @app_commands.checks.has_role(RoleID.STAFF.value)
+    async def clean_messages(
+        self, interaction: discord.Interaction, channel: discord.TextChannel
     ) -> None:
         """Clear messages from the channel"""
 
-        if not channels:
-            await ctx.send(
+        if not channel:
+            await interaction.response.send_message(
                 "⚠️ Nenhum canal fornecido. Por favor, forneça um ou mais canais."
             )
             return
+        # await interaction.response.defer(thinking=True)
+        await channel.purge(limit=None)
+        await interaction.response.send_message(
+            "Mensagens removidas com sucesso.", ephemeral=True, delete_after=5
+        )
 
-        for channel in channels:
-            await channel.purge(limit=None)
-
-    @clean.command(name="roles", aliases=["cargos"])
-    async def clear_roles(
-        self, ctx: commands.Context, roles: commands.Greedy[discord.Role]
+    @group_clean.command(name="roles", description="Limpa os membros de um cargo.")
+    @app_commands.checks.has_role(RoleID.STAFF.value)
+    async def clean_roles(
+        self, interaction: discord.Interaction, role: discord.Role
     ) -> None:
         """Clear roles from members"""
-        if not roles:
-            await ctx.send(
+        if not role:
+            await interaction.response.send_message(
                 "⚠️ Nenhum cargo fornecido. Por favor, forneça um ou mais cargos."
             )
             return
 
-        await self.remove_roles(roles)
-        await ctx.send("Cargos removidos com sucesso.")
+        await self.reset_role(role)
+        await interaction.response.send_message("Cargos removidos com sucesso.")
 
-    async def remove_roles(self, roles: commands.Greedy[discord.Role]) -> None:
+    async def reset_role(self, role: discord.Role) -> None:
 
-        for role in roles:
-            for member in role.members:
-                try:
-                    await member.remove_roles(role)
-                except discord.Forbidden:
-                    settings.LOGGER.warning(
-                        "Permissão negada ao remover cargo %s de %s", role, member
-                    )
-                except discord.HTTPException as e:
-                    settings.LOGGER.warning(
-                        "Erro ao remover cargo %s de %s: %s", role, member, e
-                    )
+        for member in role.members:
+            await member.remove_roles(role)
+
         settings.LOGGER.info("Cargos removidos com sucesso.")
 
     @tasks.loop(time=time_to_run)
@@ -113,15 +106,17 @@ class Admin(commands.Cog, name="AdminCog"):
         guild = self.bot.get_guild(1243610772064698398)  # WIP
         blue_role = guild.get_role(RoleID.BLUE.value)
         red_role = guild.get_role(RoleID.RED.value)
+        roles = [blue_role, red_role]
 
-        try:
-            await self.remove_roles(roles=[blue_role, red_role])
-        except Exception as e:
-            settings.LOGGER.warning("Erro ao limpar cargos de times: %s", e)
-        else:
-            settings.LOGGER.info("Papéis de times limpos com sucesso.")
-            channel_audit = self.bot.get_channel(ChannelID.AUDIT.value)
-            await channel_audit.send("✅ Cargos limpas automaticamente.")
+        for role in roles:
+            try:
+                await self.reset_role(role=role)
+            except Exception as e:
+                settings.LOGGER.warning("Erro ao limpar cargos de times: %s", e)
+            else:
+                settings.LOGGER.info("Papéis de times limpos com sucesso.")
+                channel_audit = self.bot.get_channel(ChannelID.AUDIT.value)
+                await channel_audit.send("✅ Cargos limpas automaticamente.")
 
     async def cog_unload(self):
         self.task_clear_message.cancel()

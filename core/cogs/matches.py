@@ -1,6 +1,7 @@
 import asyncio
 import random
 import discord
+from discord import app_commands
 from discord.ext import commands
 from discord.ui import Button, View
 import settings
@@ -8,7 +9,7 @@ from api.api_client import api_client
 from api.models.team_model import TeamModel
 from api.models.player_model import PlayerModel
 from settings.errors import MissingPlayersException
-from core.ui.embeds import show_teams
+from core.ui.embeds import teams_embed
 from utils.admin import move_user_to_channel
 from utils.enums import RoleID, ChannelID
 
@@ -18,20 +19,24 @@ class Matches(commands.Cog, name="MatchesCog"):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
+        self.channel = None
         self.players = []
         self.captain_blue = None
         self.captain_red = None
         self.is_blue_captain_turn = True
         self.admin_cog: commands.Cog = self.bot.get_cog("AdminCog")
 
-    @commands.has_role(RoleID.STAFF.value)
-    @commands.command(name="draw_captains", aliases=["sorteio"])
-    async def draw_captains(self, ctx: commands.Context) -> None:
+    @app_commands.command(name="sorteio", description="Inicia o sorteio dos capitães.")
+    @app_commands.checks.has_role(RoleID.STAFF.value)
+    async def draw_captains(self, interaction: discord.Interaction) -> None:
         """
         Begin the draft process by randomly selecting two players to be the captains.
         """
 
-        # Select only players that wants to be drafted
+        # Load all players from the API
+        await self._load_players()
+
+        # Select only players that want to be drafted
         wants_to_be_drafted = [
             player
             for player in self.players
@@ -40,7 +45,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         # If there's less than 2 players, return
         if len(wants_to_be_drafted) < 2:
-            await ctx.send(
+            await interaction.response.send_message(
                 f"Só é possível sortear com no mínimo 2 jogadores. Atualmente há {len(wants_to_be_drafted)} jogadores disponíveis."
             )
             return
@@ -57,17 +62,18 @@ class Matches(commands.Cog, name="MatchesCog"):
         self.players.remove(self.captain_blue)
         self.players.remove(self.captain_red)
 
-        await ctx.send(
+        self.channel = interaction.channel
+
+        await interaction.response.send_message(
             f"Capitão 🔵: {self.captain_blue.mention}\nCapitão 🔴: {self.captain_red.mention}"
         )
 
         await asyncio.sleep(2)
 
-        # call make_teams function
-        await self._choose_teams(ctx)
+        # Call make_teams function
+        await self._choose_teams(interaction)
 
-    @draw_captains.before_invoke
-    async def _load_players(self, ctx) -> None:  # Pode ser mais rápido
+    async def _load_players(self) -> None:
         """Load all players from the api"""
         self.players = await api_client.get_all_players()
 
@@ -77,36 +83,39 @@ class Matches(commands.Cog, name="MatchesCog"):
                 "⚠️ Não há jogadores suficientes para o sorteio."
             )
 
-    async def _choose_teams(self, ctx: commands.Context) -> None:
+    async def _choose_teams(self, interaction: discord.Interaction) -> None:
 
         team_blue = TeamModel(players=[self.captain_blue])
         team_red = TeamModel(players=[self.captain_red])
 
-        blue_role = ctx.guild.get_role(RoleID.BLUE.value)
-        red_role = ctx.guild.get_role(RoleID.RED.value)
+        blue_role = interaction.guild.get_role(RoleID.BLUE.value)
+        red_role = interaction.guild.get_role(RoleID.RED.value)
+        roles = [blue_role, red_role]
 
         # Clear team blue and team red roles
-        await self.admin_cog.remove_roles(roles=[blue_role, red_role])
+        for role in roles:
+            await self.admin_cog.reset_role(role)
 
         # Reset self.is_blue_captain_turn
         self.is_blue_captain_turn = True
 
-        await ctx.send("Hora de escolher seus times!")
+        await self.channel.send("Hora de escolher seus times!")
 
-        await ctx.send(f"🔵{self.captain_blue.mention} você começa!")
+        await self.channel.send(
+            f"🔵{self.captain_blue.mention} você começa!", delete_after=5
+        )
 
         # Send the message with the buttons to choose the players
-        view = await self._update_view(ctx, team_blue, team_red, blue_role, red_role)
-        await ctx.send(
-            "Escolha um jogador disponível:",
-            view=view,
+        view = await self._update_view(
+            interaction, team_blue, team_red, blue_role, red_role
         )
+        await self.channel.send("Escolha um jogador disponível:", view=view)
 
         # Wait until all players are chosen
         timed_out = await view.wait()
 
         if timed_out:
-            await ctx.send(
+            await self.channel.send(
                 "⏳ Tempo esgotado! Nem todos os jogadores foram escolhidos."
             )
             return
@@ -114,7 +123,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
     async def _update_view(
         self,
-        ctx: commands.Context,
+        interaction: discord.Interaction,
         team_blue,
         team_red,
         blue_role: discord.Role,
@@ -130,7 +139,9 @@ class Matches(commands.Cog, name="MatchesCog"):
                 custom_id=player.username,
             )
 
-            async def button_callback(interaction, player: PlayerModel = player):
+            async def button_callback(
+                interaction: discord.Interaction, player: PlayerModel = player
+            ):
                 """Callback para cada botão."""
 
                 current_captain = (
@@ -140,8 +151,8 @@ class Matches(commands.Cog, name="MatchesCog"):
                     self.captain_red if self.is_blue_captain_turn else self.captain_blue
                 )
 
-                blue_channel = ctx.guild.get_channel(ChannelID.BLUE.value)
-                red_channel = ctx.guild.get_channel(ChannelID.RED.value)
+                blue_channel = interaction.guild.get_channel(ChannelID.BLUE.value)
+                red_channel = interaction.guild.get_channel(ChannelID.RED.value)
 
                 # if the player is not the current captain then return
                 if interaction.user.id != current_captain.discord_uid:
@@ -168,21 +179,22 @@ class Matches(commands.Cog, name="MatchesCog"):
                     )
                     await move_user_to_channel(member, channel)
 
-                # if the teams is full, show the teams and create the match
+                # if the teams are full, show the teams and create the match
                 if len(team_blue.players) == 5 and len(team_red.players) == 5:
 
-                    embed_team = await show_teams(ctx, team_blue, team_red)
+                    embed_team = teams_embed(team_blue, team_red)
 
                     await interaction.response.edit_message(
                         content="Todos os jogadores foram escolhidos!",
                         view=None,
                         embed=embed_team,
                     )
+
                     view.stop()
 
                 # if the team is not full change the current captain and start again the process
                 else:
-                    # this lets the captain of team b to choose two players in a row if there's only three remaining players
+                    # this lets the captain of team red to choose two players in a row if there's only three remaining players
                     if len(team_red.players) != 4:
                         next_captain = (
                             self.captain_red

@@ -1,9 +1,7 @@
 from discord.ext import commands
 import discord
-from discord import app_commands
 from utils.cogs import add_cogs
 from utils.enums import RoleID
-from settings.errors import LoginError, MissingPlayersException
 import settings
 
 
@@ -11,50 +9,83 @@ class LavavaBot(commands.Bot):
     def __init__(
         self, command_prefix=commands.when_mentioned, intents=discord.Intents.default()
     ):
+        self.timeout = 10
         super().__init__(command_prefix=command_prefix, intents=intents)
+        super().tree.on_error = self.on_app_command_error
 
-    async def on_command_error(  # pylint: disable=arguments-differ
-        self, ctx: commands.Context, error
-    ):
-        if isinstance(error, commands.MissingRole):
-            settings.LOGGER.info(
-                "User %s tried to use a command without permission", ctx.author
+    async def handle_error(self, interaction_or_ctx, error):
+
+        if isinstance(
+            error,
+            (
+                discord.app_commands.MissingRole,
+                commands.MissingRole,
+                discord.app_commands.MissingPermissions,
+            ),
+        ):
+            user = (
+                interaction_or_ctx.user
+                if isinstance(interaction_or_ctx, discord.Interaction)
+                else interaction_or_ctx.author
             )
-            await ctx.send("Você não tem permissão para usar esse comando.")
+            settings.LOGGER.info(
+                "User %s tried to use a command without permission", user
+            )
+            message = "⚠️ Você não tem permissão para usar esse comando, meu caro."
+
         elif isinstance(error, commands.MissingRequiredArgument):
+            user = interaction_or_ctx.author
             settings.LOGGER.info(
-                "User %s tried to use a command without required arguments", ctx.author
+                "User %s tried to use a command without necessary permissions or arguments",
+                user,
             )
-            await ctx.send(
-                "Você não forneceu todos os argumentos necessários. Use !help para mais informações."
+            message = "⚠️ Você não forneceu os argumentos necessários."
+
+        elif isinstance(
+            error, (discord.app_commands.CommandInvokeError, discord.HTTPException)
+        ):
+            settings.LOGGER.error(
+                "An error occurred while invoking a command: %s", error
             )
+            message = "❌ Ocorreu um erro ao executar esse comando. Tente novamente mais tarde."
+
+        elif isinstance(error, discord.app_commands.CheckFailure):
+            user = interaction_or_ctx.user
+            settings.LOGGER.warning("User %s failed a check for a command", user)
+            message = "⚠️ Você não tem permissão para usar esse comando."
+
         elif isinstance(error, commands.CommandNotFound):
-            settings.LOGGER.info(
-                "User %s tried to use a command that doesn't exist", ctx.author
+            user = interaction_or_ctx.author
+            settings.LOGGER.warning("User %s failed a check for a command", user)
+            message = "⚠️ Esse Comando não existe."
+
+        else:
+            settings.LOGGER.error("Unhandled app command error: %s", error)
+            message = "❌ Ocorreu um erro inesperado. Tente novamente mais tarde."
+
+        if isinstance(interaction_or_ctx, discord.Interaction):
+            await interaction_or_ctx.channel.send(
+                message,
+                delete_after=self.timeout,
             )
-            await ctx.send("Esse comando não existe.")
-        elif isinstance(error, discord.HTTPException):
-            settings.LOGGER.error("An error occurred: %s", error)
-            await ctx.send(
-                "Ocorreu um erro ao executar esse comando. Tente novamente mais tarde."
-            )
-        elif isinstance(error, LoginError):
-            settings.LOGGER.warning("An error occurred: %s", error)
-            await ctx.send(
-                "No momento não é possível concluir essa ação. Tente novamente mais tarde."
-            )
-        elif isinstance(error, MissingPlayersException):
-            settings.LOGGER.warning("An error occurred: %s", error)
-            await ctx.send(error)
+        else:
+            await interaction_or_ctx.send(message)
+
+    async def on_command_error(self, context, error):
+        await self.handle_error(context, error)
+
+    async def on_app_command_error(self, interaction, error):
+        await self.handle_error(interaction, error)
 
     async def on_member_join(self, member):
         settings.LOGGER.info("User %s joined the server", member.name)
         cargo = member.guild.get_role(RoleID.PLAYER.value)
         if cargo:
-            await member.add_roles(cargo)
-        else:
-            settings.LOGGER.error("Falha ao adicionar cargo ao usuário %s", member.name)
+            try:
+                await member.add_roles(cargo)
+            except Exception as e:
+                settings.LOGGER.error("Error adding role: %s", e)
 
     async def setup_hook(self):
-        await self.tree.sync()
         await add_cogs(self)
+        await self.tree.sync()
