@@ -6,6 +6,8 @@ from discord.ext import commands
 from api.api_client import api_client
 from api import models
 from core.ui.views import PlayersView
+from core.ui.embeds import teams_embed
+from core.ui.select import SelectMap
 from utils import RoleID
 import settings
 from settings.errors import MissingPlayersException
@@ -114,8 +116,21 @@ class Matches(commands.Cog, name="MatchesCog"):
         # Wait until all players are chosen
         timed_out = await view.wait()
 
+        # If the view timed out, end the function
         if timed_out:
             return
+
+        embed_team = teams_embed(self.team_blue, self.team_red)
+
+        view = discord.ui.View(timeout=180)
+        view.add_item(SelectMap(cog=self))
+
+        # message = await interaction.original_response()
+
+        await interaction.followup.send(
+            content="Todos os jogadores foram escolhidos! Capitães, escolham o mapa:",
+            view=view,
+        )
 
         await self.create_match(teams=[self.team_blue, self.team_red])
 

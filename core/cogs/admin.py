@@ -120,4 +120,4 @@ class Admin(commands.Cog, name="AdminCog"):
     async def cog_unload(self):
         self.task_clear_message.cancel()
         self.task_clear_teams_roles.cancel()
-        return super().cog_unload()
+        return await super().cog_unload()

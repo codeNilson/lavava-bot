@@ -74,15 +74,6 @@ class PlayersView(View):
                 len(self.cog.team_blue.players) == 5
                 and len(self.cog.team_red.players) == 5
             ):
-
-                embed_team = teams_embed(self.cog.team_blue, self.cog.team_red)
-
-                await interaction.response.edit_message(
-                    content="Todos os jogadores foram escolhidos!",
-                    view=None,
-                    embed=embed_team,
-                )
-
                 self.stop()
 
             # if the team is not full change the current captain and start again the process
@@ -117,7 +108,7 @@ class PlayersView(View):
         button.callback = button_callback
         self.add_item(button)
 
-    async def interaction_check(self, interaction):
+    async def interaction_check(self, interaction):  # pylint: disable=arguments-differ
 
         current_captain = (
             self.cog.captain_blue
@@ -134,3 +125,9 @@ class PlayersView(View):
             )
             return False
         return True
+
+    def all_teams_if_full(self):
+        """Check if the teams are full"""
+        if len(self.cog.team_blue.players) == 5 and len(self.cog.team_red.players) == 5:
+            return True
+        return False
