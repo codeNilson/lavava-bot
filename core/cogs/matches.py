@@ -116,6 +116,7 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         if timed_out:
             return
+
         await self.create_match(teams=[self.team_blue, self.team_red])
 
     async def _update_view(self) -> PlayersView:

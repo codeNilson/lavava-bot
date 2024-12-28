@@ -49,15 +49,6 @@ class PlayersView(View):
             blue_role = interaction.guild.get_role(RoleID.BLUE.value)
             red_role = interaction.guild.get_role(RoleID.RED.value)
 
-            # if the player is not the current captain then return
-            if interaction.user.id != current_captain.discord_uid:
-                await interaction.response.send_message(
-                    "Não é sua vez de escolher!",
-                    ephemeral=True,
-                    delete_after=5,
-                )
-                return
-
             # add player to the team of the current captain
             team = (
                 self.cog.team_blue
@@ -125,3 +116,21 @@ class PlayersView(View):
 
         button.callback = button_callback
         self.add_item(button)
+
+    async def interaction_check(self, interaction):
+
+        current_captain = (
+            self.cog.captain_blue
+            if self.cog.is_blue_captain_turn
+            else self.cog.captain_red
+        )
+
+        # if the player is not the current captain then return
+        if interaction.user.id != current_captain.discord_uid:
+            await interaction.response.send_message(
+                "Não é sua vez de escolher!",
+                ephemeral=True,
+                delete_after=5,
+            )
+            return False
+        return True
