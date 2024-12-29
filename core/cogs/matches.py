@@ -134,10 +134,12 @@ class Matches(commands.Cog, name="MatchesCog"):
         if new_timed_out:  # adicionar mensagem de feedback
             return
 
-        embed_team = await teams_embed(self.team_blue, self.team_red, view.map_chosen)
+        embed_team = await teams_embed(
+            self.team_blue, self.team_red, view.final_map_choice
+        )
 
         await message_response.edit(
-            content=f"O mapa escolhido foi {view.map_chosen}.",
+            content=f"O mapa escolhido foi {view.final_map_choice}.",
             embed=embed_team,
             view=None,
         )

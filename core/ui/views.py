@@ -1,7 +1,6 @@
 import discord
 from discord.ui import View, Button
 from api import models
-from core.ui.embeds import teams_embed
 from utils import move_user_to_channel, ChannelID, RoleID
 
 
