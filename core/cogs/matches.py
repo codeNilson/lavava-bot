@@ -108,31 +108,43 @@ class Matches(commands.Cog, name="MatchesCog"):
         )
 
         # Send the message with the buttons to choose the players
-        view = await self._update_view()
-        message = await self.channel.send("Escolha um jogador disponível:", view=view)
+        update_view = await self._update_view()
+        message = await self.channel.send(
+            "Escolha um jogador disponível:", view=update_view
+        )
 
-        view.message = message
+        update_view.message = message
 
         # Wait until all players are chosen
-        timed_out = await view.wait()
+        timed_out = await update_view.wait()
 
         # If the view timed out, end the function
         if timed_out:
             return
 
-        embed_team = teams_embed(self.team_blue, self.team_red)
-
         view = discord.ui.View(timeout=180)
         view.add_item(SelectMap(cog=self))
 
-        # message = await interaction.original_response()
-
-        await interaction.followup.send(
-            content="Todos os jogadores foram escolhidos! Capitães, escolham o mapa:",
-            view=view,
+        message_response = await interaction.followup.send(
+            content="Capitães, escolham o mapa:", view=view, wait=True
         )
 
-        await self.create_match(teams=[self.team_blue, self.team_red])
+        new_timed_out = await view.wait()
+
+        if new_timed_out:  # adicionar mensagem de feedback
+            return
+
+        embed_team = await teams_embed(self.team_blue, self.team_red, view.map_chosen)
+
+        await message_response.edit(
+            content="Mapa escolhido com sucesso!",
+            embed=embed_team,
+            view=None,
+        )
+
+        await self.create_match(
+            teams=[self.team_blue, self.team_red], map=view.map_chosen
+        )
 
     async def _update_view(self) -> PlayersView:
 
@@ -143,11 +155,11 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         return view
 
-    async def create_match(self, teams: list[models.TeamModel]):
+    async def create_match(self, teams: list[models.TeamModel], map_chosen: str):
         """Cria as equipes na API."""
 
         # Create a new match in the API
-        match = await api_client.create_match()
+        match = await api_client.create_match(map_chosen=map_chosen)
         # Register the teams in the match
         for team in teams:
             team.match = match

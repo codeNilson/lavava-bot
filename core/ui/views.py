@@ -69,16 +69,25 @@ class PlayersView(View):
                 )
                 await move_user_to_channel(member, channel)
 
+            for button in self.children:
+                if button.custom_id == player.username:
+                    button.disabled = True
+                    button.style = (
+                        discord.ButtonStyle.primary
+                        if current_captain == self.cog.captain_blue
+                        else discord.ButtonStyle.danger
+                    )
+
             # if the teams are full, show the teams and create the match
-            if (
-                len(self.cog.team_blue.players) == 5
-                and len(self.cog.team_red.players) == 5
-            ):
+            if self._all_teams_if_full():
+                await interaction.response.edit_message(
+                    content="Todos os jogadores foram escolhidos!", view=self
+                )
                 self.stop()
 
             # if the team is not full change the current captain and start again the process
+            # this lets the captain of team red to choose two players in a row if there's only three remaining players
             else:
-                # this lets the captain of team red to choose two players in a row if there's only three remaining players
                 if len(self.cog.team_red.players) != 4:
                     next_captain = (
                         self.cog.captain_red
@@ -90,15 +99,6 @@ class PlayersView(View):
                     message_content = f"Jogador {player.mention} foi escolhido! Agora é a vez de {emoji + next_captain.mention} escolher."
                 else:
                     message_content = f"Jogador {player.mention} foi escolhido! 🔴{current_captain.mention}, você tem o direito a mais uma escolha."
-
-                for button in self.children:
-                    if button.custom_id == player.username:
-                        button.disabled = True
-                        button.style = (
-                            discord.ButtonStyle.primary
-                            if current_captain == self.cog.captain_blue
-                            else discord.ButtonStyle.danger
-                        )
 
                 await interaction.response.edit_message(
                     content=message_content,
@@ -116,7 +116,7 @@ class PlayersView(View):
             else self.cog.captain_red
         )
 
-        # if the player is not the current captain then return
+        # if the player is not the current captain then return False
         if interaction.user.id != current_captain.discord_uid:
             await interaction.response.send_message(
                 "Não é sua vez de escolher!",
@@ -126,7 +126,7 @@ class PlayersView(View):
             return False
         return True
 
-    def all_teams_if_full(self):
+    def _all_teams_if_full(self):
         """Check if the teams are full"""
         if len(self.cog.team_blue.players) == 5 and len(self.cog.team_red.players) == 5:
             return True

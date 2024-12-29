@@ -12,6 +12,7 @@ CLIENT_CREDENTIALS = {
 API_ENDPOINTS = {
     "players": settings.PLAYERS_API_URL,
     "teams": settings.TEAMS_API_URL,
+    "maps": settings.MAPS_API_URL,
     "matches": settings.MATCHES_API_URL,
 }
 
@@ -88,6 +89,20 @@ class ApiClient:
                 if response.status != 201:
                     return {"error": team_data}
                 return team_data
+
+    async def get_maps(self, map_name=None):
+        async with self._session_context() as session:
+            if map_name:
+                async with session.get(
+                    f"{API_ENDPOINTS.get('maps')}{map_name}"
+                ) as response:
+                    map_data = await response.json()
+                    if response.status != 200:
+                        return None
+                    return models.MapModel(**map_data)
+            async with session.get(API_ENDPOINTS.get("maps")) as response:
+                maps_data = await response.json()
+                return [models.MapModel(**mapa) for mapa in maps_data]
 
 
 api_client = ApiClient()

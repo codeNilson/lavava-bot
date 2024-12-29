@@ -1,11 +1,16 @@
 import discord
 from api import models
+from utils.maps import get_map
 
 
-def teams_embed(team_a: models.TeamModel, team_b: models.TeamModel) -> discord.Embed:
+async def teams_embed(
+    team_a: models.TeamModel, team_b: models.TeamModel, map_name: str
+) -> discord.Embed:
 
     players_team_a = [f"⚔️ {player.mention}" for player in team_a.players]
     players_team_b = [f"🛡️ {player.mention}" for player in team_b.players]
+    map_model = await get_map(map_name)
+    print(map_model.splash_art_url)
 
     embed = discord.Embed(
         title="Times escolhidos!",
@@ -13,6 +18,7 @@ def teams_embed(team_a: models.TeamModel, team_b: models.TeamModel) -> discord.E
     )
     embed.add_field(name="Time 🔵", value="\n".join(players_team_a))
     embed.add_field(name="Time 🔴", value="\n".join(players_team_b))
+    embed.set_image(url=map_model.splash_art_url)
 
     return embed
 
