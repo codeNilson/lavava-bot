@@ -1,7 +1,7 @@
 import discord
-from discord.ui import View, Button
+from discord.ui import View
+from core.ui.buttons import PlayerButton
 from api import models
-from utils import move_user_to_channel, ChannelID, RoleID
 
 
 class PlayersView(View):
@@ -20,91 +20,8 @@ class PlayersView(View):
             view=self,
         )
 
-    async def add_player_button(self, *, player):
-        button = Button(
-            label=player.username,
-            style=discord.ButtonStyle.secondary,
-            custom_id=player.username,
-        )
-
-        async def button_callback(
-            interaction: discord.Interaction,
-            player: models.PlayerModel = player,
-        ):
-            current_captain = (
-                self.cog.captain_blue
-                if self.cog.is_blue_captain_turn
-                else self.cog.captain_red
-            )
-            next_captain = (
-                self.cog.captain_red
-                if self.cog.is_blue_captain_turn
-                else self.cog.captain_blue
-            )
-
-            blue_channel = interaction.guild.get_channel(ChannelID.BLUE.value)
-            red_channel = interaction.guild.get_channel(ChannelID.RED.value)
-
-            blue_role = interaction.guild.get_role(RoleID.BLUE.value)
-            red_role = interaction.guild.get_role(RoleID.RED.value)
-
-            # add player to the team of the current captain
-            team = (
-                self.cog.team_blue
-                if self.cog.is_blue_captain_turn
-                else self.cog.team_red
-            )
-            team.add_player(player)
-
-            # remove player from the list of available players
-            self.cog.players.remove(player)
-
-            # add role and move player to the channel
-            member = await player.to_member(interaction)
-            if member:
-                channel = blue_channel if self.cog.is_blue_captain_turn else red_channel
-                await member.add_roles(
-                    blue_role if self.cog.is_blue_captain_turn else red_role
-                )
-                await move_user_to_channel(member, channel)
-
-            for button in self.children:
-                if button.custom_id == player.username:
-                    button.disabled = True
-                    button.style = (
-                        discord.ButtonStyle.primary
-                        if current_captain == self.cog.captain_blue
-                        else discord.ButtonStyle.danger
-                    )
-
-            # if the teams are full, show the teams and create the match
-            if self._all_teams_if_full():
-                await interaction.response.edit_message(
-                    content="Todos os jogadores foram escolhidos!", view=self
-                )
-                self.stop()
-
-            # if the team is not full change the current captain and start again the process
-            # this lets the captain of team red to choose two players in a row if there's only three remaining players
-            else:
-                if len(self.cog.team_red.players) != 4:
-                    next_captain = (
-                        self.cog.captain_red
-                        if self.cog.is_blue_captain_turn
-                        else self.cog.captain_blue
-                    )
-                    self.cog.is_blue_captain_turn = not self.cog.is_blue_captain_turn
-                    emoji = "🔵" if self.cog.is_blue_captain_turn else "🔴"
-                    message_content = f"Jogador {player.mention} foi escolhido! Agora é a vez de {emoji + next_captain.mention} escolher."
-                else:
-                    message_content = f"Jogador {player.mention} foi escolhido! 🔴{current_captain.mention}, você tem o direito a mais uma escolha."
-
-                await interaction.response.edit_message(
-                    content=message_content,
-                    view=self,
-                )
-
-        button.callback = button_callback
+    async def add_player_button(self, *, player: models.PlayerModel):
+        button = PlayerButton(player=player)
         self.add_item(button)
 
     async def interaction_check(self, interaction):  # pylint: disable=arguments-differ
@@ -124,9 +41,3 @@ class PlayersView(View):
             )
             return False
         return True
-
-    def _all_teams_if_full(self):
-        """Check if the teams are full"""
-        if len(self.cog.team_blue.players) == 5 and len(self.cog.team_red.players) == 5:
-            return True
-        return False
