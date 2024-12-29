@@ -20,9 +20,15 @@ class SelectMap(Select):
         }
         options = options or [
             discord.SelectOption(label="Haven", value="Haven"),
+            discord.SelectOption(label="Icebox", value="Icebox"),
+            discord.SelectOption(label="Pearl", value="Pearl"),
+            discord.SelectOption(label="Sunset", value="Sunset"),
+            discord.SelectOption(label="Lotus", value="Lotus"),
             discord.SelectOption(label="Abyss", value="Abyss"),
-            discord.SelectOption(label="Split", value="Split"),
+            discord.SelectOption(label="Breeze", value="Breeze"),
+            discord.SelectOption(label="Bind", value="Bind"),
             discord.SelectOption(label="Fracture", value="Fracture"),
+            discord.SelectOption(label="Split", value="Split"),
             discord.SelectOption(label="Ascent", value="Ascent"),
         ]
         super().__init__(
@@ -69,13 +75,13 @@ class SelectMap(Select):
 
         if interaction.user.id == captain_blue and self.captain_choices["blue_choice"]:
             await interaction.response.send_message(
-                "Você já escolheu um mapa.", ephemeral=True, delete_after=5
+                "Você já escolheu um mapa.", ephemeral=True, delete_after=3
             )
             return False
 
         if interaction.user.id == captain_red and self.captain_choices["red_choice"]:
             await interaction.response.send_message(
-                "Você já escolheu um mapa.", ephemeral=True, delete_after=5
+                "Você já escolheu um mapa.", ephemeral=True, delete_after=3
             )
             return False
 
