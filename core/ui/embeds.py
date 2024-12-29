@@ -10,7 +10,6 @@ async def teams_embed(
     players_team_a = [f"⚔️ {player.mention}" for player in team_a.players]
     players_team_b = [f"🛡️ {player.mention}" for player in team_b.players]
     map_model = await get_map(map_name)
-    print(map_model.splash_art_url)
 
     embed = discord.Embed(
         title="Times escolhidos!",

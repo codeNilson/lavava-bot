@@ -137,14 +137,12 @@ class Matches(commands.Cog, name="MatchesCog"):
         embed_team = await teams_embed(self.team_blue, self.team_red, view.map_chosen)
 
         await message_response.edit(
-            content="Mapa escolhido com sucesso!",
+            content=f"O mapa escolhido foi {view.map_chosen}.",
             embed=embed_team,
             view=None,
         )
 
-        await self.create_match(
-            teams=[self.team_blue, self.team_red], map=view.map_chosen
-        )
+        await self.create_match(teams=[self.team_blue, self.team_red])
 
     async def _update_view(self) -> PlayersView:
 
@@ -155,11 +153,11 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         return view
 
-    async def create_match(self, teams: list[models.TeamModel], map_chosen: str):
+    async def create_match(self, teams: list[models.TeamModel]):
         """Cria as equipes na API."""
 
         # Create a new match in the API
-        match = await api_client.create_match(map_chosen=map_chosen)
+        match = await api_client.create_match()
         # Register the teams in the match
         for team in teams:
             team.match = match
