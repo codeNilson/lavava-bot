@@ -44,7 +44,7 @@ class SelectMap(Select):
             self.captain_choices["red_team_map"] = selected_map
 
         await interaction.response.send_message(
-            f"Você escolheu o mapa {selected_map}.", ephemeral=True
+            f"Você escolheu o mapa {selected_map}.", ephemeral=True, delete_after=3
         )
 
         if (
