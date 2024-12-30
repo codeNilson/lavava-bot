@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from api import models
+import settings
 
 
 async def add_roles(
@@ -14,4 +15,4 @@ async def add_roles(
         try:
             await user.add_roles(role)
         except Exception:
-            pass
+            settings.LOGGER.warning("Failed to add role to user", exc_info=True)

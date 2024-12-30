@@ -92,6 +92,8 @@ class ApiClient:
 
     async def get_maps(self, map_name=None):
         async with self._session_context() as session:
+
+            # if map_name is provided, return only the map with that name
             if map_name:
                 async with session.get(
                     f"{API_ENDPOINTS.get('maps')}{map_name}"
@@ -100,6 +102,8 @@ class ApiClient:
                     if response.status != 200:
                         return None
                     return models.MapModel(**map_data)
+
+            # if map_name is not provided, return all maps
             async with session.get(API_ENDPOINTS.get("maps")) as response:
                 maps_data = await response.json()
                 return [models.MapModel(**mapa) for mapa in maps_data]
