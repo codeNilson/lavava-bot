@@ -62,11 +62,10 @@ class ApiClient:
                 data = await response.json()
                 return models.PlayerModel(**data)
 
-    async def create_match(self):
-        # acrescentar tratamento de erro
+    async def create_match(self, data=None):
         async with self._session_context() as session:
-            async with session.request(
-                "POST", API_ENDPOINTS.get("matches")
+            async with session.post(
+                API_ENDPOINTS.get("matches"), json=data
             ) as response:
                 match_data = await response.json()
                 if response.status != 201:

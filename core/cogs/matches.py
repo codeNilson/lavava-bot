@@ -155,11 +155,14 @@ class Matches(commands.Cog, name="MatchesCog"):
 
         return view
 
-    async def create_match(self, teams: list[models.TeamModel]):
+    async def create_match(
+        self, teams: list[models.TeamModel], map: str | None = None
+    ) -> None:
         """Cria as equipes na API."""
 
         # Create a new match in the API
-        match = await api_client.create_match()
+        data = {"map": map}
+        match = await api_client.create_match(data)
         # Register the teams in the match
         for team in teams:
             team.match = match
