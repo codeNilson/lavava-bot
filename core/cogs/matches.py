@@ -122,24 +122,24 @@ class Matches(commands.Cog, name="MatchesCog"):
         if timed_out:
             return
 
-        view = discord.ui.View(timeout=180)
-        view.add_item(SelectMap(cog=self))
+        select_view = discord.ui.View(timeout=180)
+        select_view.add_item(SelectMap(cog=self))
 
         message_response = await interaction.followup.send(
-            content="Capitães, escolham o mapa:", view=view, wait=True
+            content="Capitães, escolham o mapa:", view=select_view, wait=True
         )
 
-        new_timed_out = await view.wait()
+        new_timed_out = await select_view.wait()
 
         if new_timed_out:  # adicionar mensagem de feedback
             return
 
-        embed_team = await teams_embed(
-            self.team_blue, self.team_red, view.final_map_choice
-        )
+        final_map_choice = select_view.final_map_choice
+
+        embed_team = await teams_embed(self.team_blue, self.team_red, final_map_choice)
 
         await message_response.edit(
-            content=f"O mapa escolhido foi {view.final_map_choice}.",
+            content=f"O mapa escolhido foi {final_map_choice}.",
             embed=embed_team,
             view=None,
         )

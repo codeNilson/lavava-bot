@@ -1,6 +1,7 @@
 import random
 import discord
 from discord.ui import Select
+from discord.utils import find
 
 
 class SelectMap(Select):
@@ -36,7 +37,8 @@ class SelectMap(Select):
 
     async def callback(self, interaction):
 
-        selected_map = self.values[0]
+        map_name = self.values[0]
+        selected_map = find(lambda x: x.value == map_name, self.options)
 
         if interaction.user.id == self.cog.captain_blue.discord_uid:
             self.captain_choices["blue_team_map"] = selected_map
@@ -44,7 +46,7 @@ class SelectMap(Select):
             self.captain_choices["red_team_map"] = selected_map
 
         await interaction.response.send_message(
-            f"Você escolheu o mapa {selected_map}.", ephemeral=True, delete_after=3
+            f"Você baniu o mapa {selected_map}.", ephemeral=True, delete_after=3
         )
 
         if (
@@ -66,7 +68,7 @@ class SelectMap(Select):
 
         if not user_is_captain:
             await interaction.response.send_message(
-                "Somente os capitães podem escolher o mapa.",
+                "Somente os capitães podem banir um mapa.",
                 ephemeral=True,
                 delete_after=5,
             )
@@ -90,7 +92,12 @@ class SelectMap(Select):
         return True
 
     def choose_random_map(self):
-        list_maps = list(self.captain_choices.values())
-        final_map_choice = random.choice(list_maps)
+        final_map_choice = random.choice(
+            [
+                option
+                for option in self.options
+                if option not in self.captain_choices.values()
+            ]
+        )
 
-        return final_map_choice
+        return final_map_choice.value
