@@ -144,7 +144,9 @@ class Matches(commands.Cog, name="MatchesCog"):
             view=None,
         )
 
-        await self.create_match(teams=[self.team_blue, self.team_red])
+        await self.create_match(
+            teams=[self.team_blue, self.team_red], map=final_map_choice
+        )
 
     async def _update_view(self) -> PlayersView:
 
