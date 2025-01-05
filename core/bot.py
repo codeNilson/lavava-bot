@@ -49,6 +49,11 @@ class LavavaBot(commands.Bot):
             )
             message = "❌ Ocorreu um erro ao executar esse comando. Tente novamente mais tarde."
 
+        elif isinstance(error, settings.errors.MissingPlayersException):
+            user = interaction_or_ctx.user
+            settings.LOGGER.warning("Tried to draw captains without enough players")
+            message = "⚠️ Não há jogadores suficientes para realizar o sorteio."
+
         elif isinstance(error, discord.app_commands.CheckFailure):
             user = interaction_or_ctx.user
             settings.LOGGER.warning("User %s failed a check for a command", user)
@@ -64,7 +69,7 @@ class LavavaBot(commands.Bot):
             message = "❌ Ocorreu um erro inesperado. Tente novamente mais tarde."
 
         if isinstance(interaction_or_ctx, discord.Interaction):
-            await interaction_or_ctx.channel.send(
+            await interaction_or_ctx.response.send_message(
                 message,
                 delete_after=self.timeout,
             )
