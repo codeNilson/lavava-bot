@@ -2,6 +2,7 @@ import random
 import discord
 from discord.ui import Select
 from discord.utils import find
+import settings
 
 
 class SelectMap(Select):
@@ -42,8 +43,18 @@ class SelectMap(Select):
 
         if interaction.user.id == self.cog.captain_blue.discord_uid:
             self.captain_choices["blue_team_map"] = selected_map
+            settings.LOGGER.info(
+                "Blue team captain %s banned map %s",
+                self.cog.captain_blue.username,
+                selected_map,
+            )
         else:
             self.captain_choices["red_team_map"] = selected_map
+            settings.LOGGER.info(
+                "Red team captain %s banned map %s",
+                self.cog.captain_red.username,
+                selected_map,
+            )
 
         await interaction.response.send_message(
             f"Você baniu o mapa {selected_map}.", ephemeral=True, delete_after=3
