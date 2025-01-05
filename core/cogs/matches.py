@@ -77,7 +77,12 @@ class Matches(commands.Cog, name="MatchesCog"):
 
     async def _load_players(self) -> None:
         """Load all players from the api"""
-        self.players = await api_client.get_all_players()
+        all_players = await api_client.get_all_players()
+        self.players = [
+            player
+            for player in all_players
+            if player.will_play_the_next_match and player.is_approved
+        ]
 
         # Check if there are enough players to start the draft
         if len(self.players) < 10:

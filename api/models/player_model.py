@@ -13,6 +13,8 @@ class PlayerModel(BaseModel):
     tier: str | None
     ranking: int
     include_in_draft: bool
+    will_play_the_next_match: bool
+    is_approved: bool
     social_accounts: list[dict]
 
     @property
