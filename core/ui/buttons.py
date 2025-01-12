@@ -47,13 +47,9 @@ class PlayerButton(Button):
         # add role and move player to the channel
         member = await self.player.to_member(interaction)
         if member:
-            channel = (
-                blue_channel if self.view.cog.is_blue_captain_turn else red_channel
-            )
-            await member.add_roles(
-                blue_role if self.view.cog.is_blue_captain_turn else red_role
-            )
-            await move_user_to_channel(member, channel)
+            role = blue_role if self.view.cog.is_blue_captain_turn else red_role
+            await member.add_roles(role)
+            # await move_user_to_channel(member, channel)
 
         for button in self.view.children:
             if button.custom_id == self.player.username:
