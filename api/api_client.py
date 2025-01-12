@@ -63,7 +63,6 @@ class ApiClient:
                 return models.PlayerModel(**data)
 
     async def create_match(self, data=None):
-        print(data)
         async with self._session_context() as session:
             async with session.post(
                 API_ENDPOINTS.get("matches"), json=data
